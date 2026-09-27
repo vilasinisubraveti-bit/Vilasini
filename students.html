@@ -191,7 +191,11 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
           ${taken ? `<span class="meta" style="font-weight:600">Not available</span>` : state === "mine" ? `<span class="meta" style="font-weight:600;color:#9c2f24">Your class</span>` : `<a class="btn btn--ghost" href="${esc(contact(`Namaste! I'd like to book a class on ${fmtDay(start)} ${fmtTime(start)} (my time) / ${istHM(start)} IST.`))}" target="_blank" rel="noopener">Request this slot</a>`}</div>`).join("")}</div>`
           : `<div class="card"><p class="muted">Availability will be shared soon.</p></div>`}
         <div class="card"><h3>Request a class</h3>
-          <form data-req><div class="row" style="gap:10px"><label style="flex:1 1 200px">Your name<input name="n" required></label><label style="flex:1 1 200px">Preferred time<input name="t" placeholder="e.g. Saturdays 10am my time"></label></div>
+          <form data-req><label>Your name<input name="n" required></label>
+          <div class="row" style="gap:10px"><label style="flex:1 1 150px">Preferred date<input name="d" type="date" required></label>
+            <label style="flex:1 1 120px">Time (your time)<input name="t" type="time" required step="900"></label>
+            <label style="flex:1 1 120px">Length<select name="len"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1 hour</option><option value="90">1½ hours</option></select></label></div>
+          <p class="meta" data-req-ist style="margin:0"></p>
           <label>Message<textarea name="m" rows="3" placeholder="Your level, what you'd like to learn…"></textarea></label>
           <div class="row"><button class="btn ${data.whatsapp ? "btn--wa" : ""}">${data.whatsapp ? "Send on WhatsApp" : "Send by email"}</button></div></form></div></section>` : ""}
       <p class="tz" style="text-align:center">This device remembers your access. <a href="#" data-forget>Forget this device</a></p>
@@ -209,8 +213,28 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
   });
   document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied ✓"; setTimeout(() => (b.textContent = "Copy"), 1500); } catch { prompt("Copy:", b.dataset.copy); } });
   const req = document.querySelector("[data-req]");
-  if (req) req.onsubmit = (e) => { e.preventDefault(); const f = e.target;
-    window.open(contact(`Namaste! I'm ${f.n.value}.${f.t.value ? " Preferred time: " + f.t.value + " (" + tz + ")." : ""} ${f.m.value}`.trim()), "_blank"); };
+  if (req) {
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const tomorrow = new Date(Date.now() + 864e5);
+    req.d.min = `${tomorrow.getFullYear()}-${pad2(tomorrow.getMonth() + 1)}-${pad2(tomorrow.getDate())}`;
+    const picked = () => { if (!req.d.value || !req.t.value) return null; const st = new Date(`${req.d.value}T${req.t.value}`); return { st, en: new Date(st.getTime() + (+req.len.value) * 6e4) }; };
+    const istFull = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true }).format(d);
+    const localFull = (d) => new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true }).format(d);
+    const overlaps = (list, p) => list.some(([bs, be]) => bs < p.en.getTime() && be > p.st.getTime());
+    const clash = (p) => overlaps(busy, p) ? "busy" : overlaps(mine, p) ? "mine" : "";
+    const info2 = req.querySelector("[data-req-ist]");
+    const upd = () => { const p = picked(); if (!p) { info2.textContent = ""; return; }
+      const c = clash(p);
+      info2.innerHTML = c === "busy" ? `<b style="color:#9c2f24">⚠ Clash — that time is not available. Please choose another.</b>`
+        : c === "mine" ? `<b style="color:#9c2f24">⚠ You already have a class at that time.</b>`
+        : `✓ Free · that is <b>${esc(istFull(p.st))}</b> in India.`; };
+    ["input", "change"].forEach((ev) => req.addEventListener(ev, upd));
+    req.onsubmit = (e) => { e.preventDefault(); const f = e.target, p = picked(); if (!p) return;
+      if (clash(p)) { upd(); return; }
+      const msg = `Namaste! I'm ${f.n.value}. I'd like to request a class:\n` +
+        `• ${localFull(p.st)} (my time, ${tz})\n• ${istFull(p.st)} India time\n• ${f.len.value} minutes` + (f.m.value.trim() ? `\n\n${f.m.value.trim()}` : "");
+      window.open(contact(msg), "_blank"); };
+  }
   document.title = `${teacher} · ${mode === "portal" ? "Student portal" : "Class invitation"}`;
 })();
 </script>
