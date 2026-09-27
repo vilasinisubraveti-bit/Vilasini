@@ -1,6 +1,7 @@
 /* =====================================================================
    CONTENT.JS — all website text lives here.
-   Easiest way to edit: open  https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
+   Easiest way to edit: open the website on your signed-in device and tap "Edit page",
+   or use https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
    ===================================================================== */
 
 window.SITE = {
@@ -232,21 +233,21 @@ window.SITE = {
   "press": [],
   "pressHidden": [],
   "classVault": {
-    "s": "iF6/cAOfVZEbNVWWb8eVXA==",
-    "i": "/ZPRX5sjPULXpi+i",
-    "d": "0Y9f7xlXlErThNM0ZWWywXcTrrlDMnt81jSwf7tNCfUMa7fePKSNLjGeNDJ102lTxDsu9dfCviGsiihBktLigPQZb31+AnJPaFErqjOXcREINSVdPPB8E3pjscjGB9VBca7/m0nAbcy4gWTB7Nrs20BLBJ4W9BqrotB4VIzw79kiZKGdJQF3A2oe/H5tatMMAOITHt8T4Se++9bKRXFKIJLSAaVzW+HlLu4h+UFIGHeUC7KInFls7DV7fyk2+s8nhEFLC+LOdnyyYCehZ4XHkyc="
+    "s": "Fj1/UldzUiC2mKkMP3a30g==",
+    "i": "23ZEYwGabVlS+Ea2",
+    "d": "/OT9JRJW7qVbTZO9oVwyT/vh+9jn2COFAIdI8Xb9UHa0j0BmfjdAbvbgjRrH2jSo2pkMnidEM70xg96e5GGhgrLo1fP5umYWZSEPqT+pSSA4mVfD9Hv4UErQSncEPvbEyHhadWVxU0Q40Nvz0tkrCb92SIcG97oTQrIX4TeGfTcLXifFXx020VeovaADOT7TqEGJ+XWFrZN3YBg86/Uvj4qJHl8HO+GBtxBrHX6ZWzBSUpx3uJHaqn1PHdp+S8dthlofxgDwTC/2z+qgTahCURhDraPBl5DyYs9sAkrQpt8dwAdwI6ZoHybSE/G4IF7Tkx135+SZFfqlDZi7R1iWrA5xqkBykkisDrloO5Hkid8f1z3hrNuBx1QbpWUVUoF+E77GlPo+NZL/bJUpEo1yArIpNFt+h1SkSqMG4KbV5dfSqHkaLDeZkFfWdthn6M1OhWswZFb0YhDEr7YzcUQHj+bChczUMtoE/yHHY/Rl3MxqDf0B0ckS/hlk6fzLHLOYTyxidfHJ/qI89brU2NN5oCs57VY9lC0ViM4K6Bnpc/KJ/j3I1DOHs5FpeP17Dxe2/Yq4Bcj52uGNBEL59ltjsfXiOwH2Do6zrzXyFfkzSttQbNsl8g1XWUkwYf0xgHjd2npSKBaZiF9cUFxuH5hCEmRFCTIFb9yF5RvcxkkQ1BTeCbX53z4HIkcPGgtx6P1ugdwQDNpM47p2tVlq/K6prz8Li485Iq9NowjMU6MWATUSJlhLbLyF3gZOwUws8O0nrwxuknAe64K1zoFbw5Tfu2gwAFD6QxbU4X7jpSJ86l4v7Qky9ueoRQP7dzqtG6ANe288KqZRHYr+2uPDh4qjYtonkUbHI4MnUl+cBHDdyW+WFZkr55m1vjWMXje7Qh7hpSQB7OR3I3JJ4DA8fHtQhjD70rFEBJ3QizE/rVxN1QU/kg=="
   },
   "classPortal": {
-    "s": "LNzXQTktdW8noHIcAJ89AA==",
-    "i": "i5/vLyxAlmmLgkId",
-    "d": "GUosHXPX4KjuK2jvp8FmFnu/c7mZs5uoShXRwh0vxnXj+F5vWaG/UuKElxGBpveovcLxKX1wld65QmCl28e+d4dea8L6XyBb6VFwMAOQGKnz4q/T5baptmqdbgkBne0iVFyg4ei4a9LYf7fCr36OLVAAHjT3AKjG0TDLPvGfNwncDXiEA9+xBLxDp/gQN+7w74CTQd52WD5ZD8EUEn5nsxx0lSg8y+qAGybrd5j9Bbtcj20OVu9LgbaL1wMr15oaalLMMJ6NdwUBNiO80Om2fiIWAoT+dGZWQnF3IcACXNdsdz2oUoIafOFQ4by3vEq4MkOEu/tY7YbUpl0eN3QH6tJru5HXq3bUR2ypmTJs2E/HnWUtOAUKUyRK99dzcRx2hcVxW0A4/pil1PDSQZ3FCVdZiNauCD2+NCc5pM4seWwp8irbGgkWhLmHe3ZZsoWvTbxcUcIogxP1geJxrY+3EYKNlN4lVnuGVKFuR1m8L1eeMNx1F4vkkQ8nlDmIIWzDtWPzw1gfQmCaiQqjgQ4uRfLOoa8eQcjK7XvRzJFmp/kr0C1SLN8EGGCf1fsY8EpSxKVm"
+    "s": "R7MyPcv6jBcFHHBxFxWjog==",
+    "i": "a9+iIhNik2MuqFLI",
+    "d": "hQBe0ns6uA57zIj9xBoEGqc4BDyDKUWhR5uczvJmuVJPX9+9WKAFhow8/LD4Yignc7gyaKGt+dGakDeC15TB3K2KAgpCi1oEfB8cJzcxVCRJ2z6CWRkgsXqnKkCC9S2QoTX/Rzv6MEHXRGvmKOmkMdM7RdY9f8fM/VpHRJR64quXQOzqJwRLH3rw76X51wJedjpe4KcFPc549X67MmAVf2Ka34MV1o7jQEXwCRWck1ITmfLFtCp81KGhbZ8d7HHsKNg4O8pUlTUZhLdH40jI9bgqvEUs6EV9ruVpMCFkD+UT+vBG+YGjvV65KlFnZngCdUElFMTUbjcbvuPICRUzbzSyM7zq5F5KTrxRKFaYBMXlRJLQn+CCwVbLmxeJ5dSipKqJGr7ZQULzkVrk9+W2rwu11sQ7Ey+nRocQCpR2+YCJ28qPUwCZy5BNdaklONHshMobHAnibdxlEALu3+d7cJxWZzbJ9N30lN6dENcksn/4v+3Gr8kU4+QWeRmxAz1uDilDBu4um0sFMfXJMafiC8tGP8Y8zcEEsGRFG06be8dnJYZhVytmD3lO3onnOTNjVLkpeBmzqFsPOOBGVAXMYMr8ZfvrkVVCj1txCfeaiXNggtbeoe+IdtDkL3QN1/uWt4VvuC7nC96Cvl6cAL7qDI4vr9AVWNskK1efHAZ+qwXhVVenuFntCEudztnw73/jP44OpEJ5kyYIPwKjxg3/btcRA7KvmVHufAAoBDFckX5z0DzRGLDBEdZsC9Q6lQlfMNH0OluadAUDB0Lu3L0RwmtkTRlyGp6sM3/lgqBDf93/ud0GnKdc2ob3OjS7WUM+TvyRtLDkpQRUhY2N6mHvgv2B4QZG5qEn45b3cQWNn+Z9EAXCumAI3yfjgFkBHei5bl72m08iHgczY91RrCPJ3ksRhPl4T0MPsSamdeynCH1P0C9mxvf02/7Sgz9cAzN4zt7xzsJZXQZrDZsxiK3C5WD4DVmaxRdD+8cipRaS1khEc4tMLR9P7lPP"
   },
   "classInvites": {},
   "classStudents": {
     "pcdz9f1no7": {
-      "s": "vT5WwtJNsLTDBRjMinH7eg==",
-      "i": "DIYnI8oODSnxRyh4",
-      "d": "nZi9Sqnh/nz6GRugLXk04TnWuIjZwd+/f1vqzJhY0v4jzYGr/OgRusfFZukwCsuTGD2EhUMP55GQcCy8PolzDf3cNn29FKen4c749U6NynJkke+SKosG0MAGqPkA9o5dQrb3awrd72ULdr1FNGIYPDN+d17/1qZI7alBVjX6Ewt2+AVf2IC77y7ILwvuClXvtlmZFVrslJcRFQ58UjcAwRy7ObE3awYvyusv2PaJ/GNIciHjq9d05kGcFGYoCzzy8RICAQcVjeAocVaTHs8phS9llkubgX4FCAAqfGKxfuXRxNbCe5h+VLSYceKT3U1IryWqwqC/rJiJui6lig0j6G90Ra57ZH4kEbf4jKPLPMuDHNvsANJ62okERxMajMpW5PV39oIv1o8BUm+/T+PGWuk7+Ik9M20skU7jgMf2pLZ35X8teSXopTwNivQjtAx1hkNOBDoUJyhdP8c91X5LoH0ufBPtVAgKFw1w6iwPfiqhVpQM08w/e/MUdozrH0TIOEgJ5MGX5EEh6XsexjGpmI8aM9oQ6V62t9M+/xM2hQ7cLBb4kJwpW7jBfKYOckxCVzJRsvCme43L8g5Mcs5jH9NctkteWLrvfBTsht2Cqpc="
+      "s": "0iYTkUtjLFh7NcZOQuDDvw==",
+      "i": "NROjobgoZLLzGewH",
+      "d": "+v3GAN6dlFvGrjR4R7odaBWxUlwDtVGcekkSpGHIfbDkOLhR7SuU30v8Rz0fQAJnFa7iB6ZHLLiW9DoKucVcc+oirCazrGnEq22iuLxK6CLMfu+Uazua7fDstud2MdzB6pC8AZtni0eyrUqfk5rDa0mr2Yx9+Y8ZisszTkJOwWAMJ2sDzwDaBkdFDkk09o/uE33HGGy5Io89mP7qc2/LeLQiCFAt63T6a8T+czGAbb7DPZOimuGtNkUZCJ6RU0sfvRfACPLtjK5XrUU8XrK7fnM1U7scEsEkeDQDwdCl1SDC+ris1b//2XjsAwYUJVkEx9/zFJ1zpuWJRCCdGs6K90IpkHOt4lcxwkwSjufcYpFqBssAcZj3HrNzhFpLVvuHqKw6ifyQp5xbIAtnnnyAwb8R9Hxtb1qU/D6kfDzozMZMWzus3OmiekZiPsONQdgbjNfpmFkKZ9J4KGZIpCI/JiwINKmy/VZmk8nw+/vgixF9CS8+UqZMT0XTMYxWLg0LbUqC5G2gPi3nfdRM1AIUL6NL9Wd73mI0QIK7H0UdFElMojHVLTFRxiITwM5DZHA6tH7zwRxqffsujNPa6FI9hWR/Eo+w+IvMZ3QQtKTV5dJVJenQyojAoMT3H8i1+uH5RJbBpJuu35/jP/PbUCxVMwQtiMRAyp2z+irGusgQZ+3WVWVP4Y487gBzwnXGTIZ5cubEGohx4YtTh1n6OQxk9yG1zvKBZ9df+KGfC/rz3WTGDPiHzfrV3DLEq/0GGQ+QVdnautHe+6XRg024joFuEeQqzaRDzdlCiSz6G+ZQjA2I1RnbyhkENnCqNxbbDKEcZ9ApbCV8quIBPtfEZy79wKZAf3ct4dkwFcFfp8NSiTfdwP6JNOzZHaeL0ItGJQxxJQ1WR5jG2qztiF2Ma2YhQm8s0QW8/lq4c1zPzXm1PrG3J5yeafSME/apGgdoi45irA8CyKc+0AP3QcFT4CLkpsi+HC5NbGLqAEPiyIHqCDwzhvs8RUztuHwqXm5QBD0u++/6Fpv0EZgq1dqW6EdNeg1ehs0DSo8="
     }
   },
   "instagramPosts": [
