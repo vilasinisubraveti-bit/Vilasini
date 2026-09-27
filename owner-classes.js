@@ -63,10 +63,38 @@
   const wa = (text) => `https://wa.me/?text=${encodeURIComponent(text)}`;
 
   /* ---------- open: load + PIN ---------- */
+  // Her concerts (from the website's concert list + Google Calendar feed). Used to block class times.
+  let concerts = [];
+  async function loadConcerts() {
+    const get = (f) => fetch(f + "?t=" + Date.now()).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+    const [cal] = await Promise.all([get("events.json")]);
+    const all = [...(site.announcements || []), ...(Array.isArray(cal) ? cal : [])].filter((e) => e && e.date && (!e.type || /concert|festival|online|workshop|masterclass/i.test(e.type)));
+    const seen = new Set();
+    concerts = all.map((e) => {
+      const start = new Date(`${e.date}T${e.time || "00:00"}:00+05:30`);
+      const end = e.endTime ? new Date(`${e.date}T${e.endTime}:00+05:30`) : e.time ? new Date(start.getTime() + 3 * 36e5) : new Date(`${e.date}T23:59:00+05:30`);
+      return { title: e.title || "Concert", start, end, where: [e.venue, e.address || e.city].filter(Boolean).join(", "), allDay: !e.time };
+    }).filter((c) => { const k = c.start.getTime() + c.title; if (seen.has(k)) return false; seen.add(k); return c.end > Date.now() - 864e5; });
+  }
+  // Things she added by hand in her Google "Classes" calendar (synced every 3 hours, encrypted with the PIN)
+  let gcal = [], gcalLoaded = false;
+  async function loadGcal() {
+    if (gcalLoaded) return; gcalLoaded = true;
+    try { const rec = await (await fetch("private-calendar.json?t=" + Date.now())).json();
+      const d = await CC.unlock(rec, pin);
+      const known = new Set(vault.sessions.map((s) => s.id));
+      gcal = (d.events || []).filter((e) => !(e.classId && known.has(e.classId)))   // skip classes that were added from here
+        .map((e) => ({ title: e.title, start: new Date(e.start), end: new Date(e.end), where: e.where, allDay: e.allDay, fromGoogle: true }));
+    } catch { gcal = []; }
+  }
+  const clashes = (s) => CC.occurrences(s).flatMap((d) => { const e = d.getTime() + (+s.duration || 60) * 6e4;
+    return [...concerts, ...gcal].filter((c) => c.start.getTime() < e && c.end.getTime() > d.getTime()).map((c) => ({ d, c })); });
+
   window.__openClasses = async () => {
     const body = shell("Classes & student portal");
     body.innerHTML = `<p class="muted">Loading…</p>`;
     try { site = await O.readContent(); } catch (e) { body.innerHTML = `<p class="err">Could not load: ${esc(e.message)}</p>`; return; }
+    await loadConcerts();
     pin = store.get("class-pin");
     if (site.classVault && pin) { try { vault = await CC.unlock(site.classVault, pin); return main(); } catch { store.del("class-pin"); } }
     askPin(!site.classVault);
@@ -99,12 +127,13 @@
     const pay = vault.payment || {};
     vault.students ||= [];
     const base = { teacher: A.name || "", photo: A.photo || "", whatsapp: soc.whatsapp || "", email: soc.email || "", note: vault.note || "",
-      intro: vault.intro || "", plans: (vault.plans || []).filter((p) => p.name), upiId: pay.upiId || "", upiName: pay.upiName || A.name || "", payNote: pay.note || "",
+      intro: vault.intro || "", plans: (vault.plans || []).filter((p) => p.name), upiId: pay.upiId || "", upiName: pay.upiName || A.name || "", payNote: pay.note || "", bank: Object.fromEntries(Object.entries(pay.bank || {}).filter(([, v]) => v)),
       availability: vault.availability || [], updated: new Date().toISOString() };
     // "Not available" blocks: every class that isn't a whole-group class, next 120 days — times only, no names or links
     const horizon = Date.now() + 120 * 864e5;
-    const busyOf = (list) => list.flatMap((s) => CC.occurrences(s).filter((d) => d.getTime() + (+s.duration || 60) * 6e4 > Date.now() && d.getTime() < horizon)
-      .map((d) => ({ s: d.toISOString(), e: new Date(d.getTime() + (+s.duration || 60) * 6e4).toISOString() })));
+    const concertBusy = concerts.filter((c) => c.start.getTime() < horizon).map((c) => ({ s: c.start.toISOString(), e: c.end.toISOString() }));   // Google-calendar items reach students via busy.json
+    const busyOf = (list) => concertBusy.concat(list.flatMap((s) => CC.occurrences(s).filter((d) => d.getTime() + (+s.duration || 60) * 6e4 > Date.now() && d.getTime() < horizon)
+      .map((d) => ({ s: d.toISOString(), e: new Date(d.getTime() + (+s.duration || 60) * 6e4).toISOString() }))));
     const groupSessions = vault.sessions.filter((s) => s.audience === "all");
     const portal = { ...base, sessions: groupSessions.map(pub), busy: busyOf(vault.sessions.filter((s) => s.audience !== "all")) };
     const vaultRec = await CC.lock(vault, pin);
@@ -127,32 +156,57 @@
 
   /* ---------- main screen ---------- */
   let tab = "cal";
-  function main() {
+  async function main() {
+    await loadGcal();
     const body = shell("Classes & student portal");
     body.innerHTML = `<div class="cm__tabs">
-      <button data-t="cal">🗓 Calendar</button><button data-t="classes">📅 Classes</button><button data-t="students">👩‍🎓 Students</button><button data-t="avail">🕒 Availability</button><button data-t="fees">💳 Fees & payment</button><button data-t="portal">🔗 General portal link</button></div><div data-v></div>`;
+      <button data-t="cal">🗓 Calendar</button><button data-t="classes">📅 Classes</button><button data-t="students">👩‍🎓 Students</button><button data-t="avail">🕒 Availability</button><button data-t="pay">💰 Payments & Excel</button><button data-t="fees">💳 Fees & payment</button><button data-t="portal">🔗 General portal link</button></div><div data-v></div>`;
     $$("[data-t]", body).forEach((b) => { b.classList.toggle("on", b.dataset.t === tab); b.onclick = () => { tab = b.dataset.t; main(); }; });
     const v = $("[data-v]", body);
-    ({ cal: viewCalendar, classes: viewClasses, students: viewStudents, avail: viewAvailability, fees: viewFees, portal: viewPortal })[tab](v);
+    ({ cal: viewCalendar, classes: viewClasses, students: viewStudents, pay: viewPayments, avail: viewAvailability, fees: viewFees, portal: viewPortal })[tab](v);
   }
 
+  const gcalStamp = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const gcalLink = (s) => {
+    const d = new Date(s.start), e = new Date(d.getTime() + (+s.duration || 60) * 6e4);
+    const details = [`Class ID: ${s.id}`, `Class: ${s.title}`, `Student: ${whoFor(s)}`, `Join: ${s.link}`, s.meetingId ? `Meeting ID: ${s.meetingId}` : "", s.passcode ? `Passcode: ${s.passcode}` : "", s.fee ? `Fee: ₹${s.fee}` : ""].filter(Boolean).join("\n");
+    const q = new URLSearchParams({ action: "TEMPLATE", text: `🎓 ${s.title} — ${whoFor(s)}`, dates: `${gcalStamp(d)}/${gcalStamp(e)}`, details, location: s.link, ctz: "Asia/Kolkata" });
+    if ((+s.weeks || 1) > 1) q.set("recur", `RRULE:FREQ=WEEKLY;COUNT=${+s.weeks}`);
+    return "https://calendar.google.com/calendar/render?" + q.toString();
+  };
+  function downloadIcs() {
+    const esc2 = (t) => String(t || "").replace(/[\\;,]/g, (m) => "\\" + m).replace(/\n/g, "\\n");
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//music-site classes//EN", "X-WR-CALNAME:Classes"];
+    vault.sessions.forEach((s) => { const d = new Date(s.start), e = new Date(d.getTime() + (+s.duration || 60) * 6e4);
+      lines.push("BEGIN:VEVENT", `UID:${s.id}@music-site`, `DTSTAMP:${gcalStamp(new Date())}`, `DTSTART:${gcalStamp(d)}`, `DTEND:${gcalStamp(e)}`,
+        ...((+s.weeks || 1) > 1 ? [`RRULE:FREQ=WEEKLY;COUNT=${+s.weeks}`] : []), `SUMMARY:${esc2("🎓 " + s.title + " — " + whoFor(s))}`, `LOCATION:${esc2(s.link)}`,
+        `DESCRIPTION:${esc2(["Class ID: " + s.id, "Join: " + s.link, s.meetingId ? "Meeting ID: " + s.meetingId : "", s.passcode ? "Passcode: " + s.passcode : ""].filter(Boolean).join("\n"))}`, "END:VEVENT"); });
+    lines.push("END:VCALENDAR");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar" })); a.download = "classes.ics"; a.click();
+  }
   const whoFor = (s) => s.audience === "all" ? "All students (group)" : s.audience === "student" ? ((vault.students || []).find((x) => x.id === s.studentId)?.name || "Student") : "Link only";
   const studentUrl = (st) => `${O.SITE_URL}students.html#s.${st.id}.${st.key}`;
 
   /* Full calendar — only you and your brother see this */
   function viewCalendar(v) {
     const now = new Date(), end = new Date(Date.now() + 21 * 864e5);
-    const occ = vault.sessions.flatMap((s) => CC.occurrences(s).filter((d) => d.getTime() + (+s.duration || 60) * 6e4 > now && d < end).map((d) => ({ s, d }))).sort((a, b) => a.d - b.d);
+    const occ = [...vault.sessions.flatMap((s) => CC.occurrences(s).filter((d) => d.getTime() + (+s.duration || 60) * 6e4 > now && d < end).map((d) => ({ s, d }))),
+      ...[...concerts, ...gcal].filter((c) => c.end > now && c.start < end).map((c) => ({ c, d: c.start }))].sort((a, b) => a.d - b.d);
     const dayKey = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long" }).format(d);
     const tIST = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true }).format(d);
     const groups = {}; occ.forEach((o) => (groups[dayKey(o.d)] ||= []).push(o));
-    v.innerHTML = `<div class="row" style="justify-content:space-between"><p class="muted">All classes for the next 3 weeks (IST). Only you two see this — each student sees only their own classes.</p>
-      <button class="b" data-new>+ Schedule a class</button></div>
-      ${occ.length ? Object.entries(groups).map(([day, list]) => `<div class="card"><h3>${esc(day)}</h3>${list.map(({ s, d }) => `<div class="row" style="justify-content:space-between;border-top:1px solid #efe6d8;padding-top:8px">
-          <div><b>${esc(tIST(d))}</b> · ${esc(s.duration)} min · ${esc(s.title)}<div class="muted">${esc(whoFor(s))} · ${esc(CC.platformOf(s.link))}</div></div>
-          <a class="b g" href="${esc(s.link)}" target="_blank" rel="noopener">Start ↗</a></div>`).join("")}</div>`).join("")
-        : `<div class="card"><p class="muted">No classes in the next 3 weeks.</p></div>`}`;
+    v.innerHTML = `<div class="row" style="justify-content:space-between"><p class="muted">Concerts 🎤, classes 🎓 and anything you added in Google Calendar 📅 — next 3 weeks (IST). Only you two see this. Concert times are shown to students as "Not available".</p>
+      <div class="row"><button class="b g" data-ics>⬇ All classes (.ics)</button><button class="b" data-new>+ Schedule a class</button></div></div>
+      ${occ.length ? Object.entries(groups).map(([day, list]) => `<div class="card"><h3>${esc(day)}</h3>${list.map(({ s, c, d }) => c
+          ? `<div class="row" style="justify-content:space-between;border-top:1px solid #efe6d8;padding-top:8px;background:#fbf1e6">
+              <div><b>${c.allDay ? "All day" : esc(tIST(c.start)) + " – " + esc(tIST(c.end))}</b> · ${c.fromGoogle ? "📅" : "🎤"} <b>${esc(c.title)}</b><div class="muted">${c.fromGoogle ? "From your Google Classes calendar" : "Concert"}${c.where ? " · " + esc(c.where) : ""}</div></div></div>`
+          : `<div class="row" style="justify-content:space-between;border-top:1px solid #efe6d8;padding-top:8px">
+              <div><b>${esc(tIST(d))}</b> · ${esc(s.duration)} min · 🎓 ${esc(s.title)}${clashes(s).some((x) => x.d.getTime() === d.getTime()) ? ` <span class="tag priv">⚠ clashes with a concert</span>` : ""}
+              <div class="muted">${esc(whoFor(s))} · ${esc(CC.platformOf(s.link))}</div></div>
+              <a class="b g" href="${esc(s.link)}" target="_blank" rel="noopener">Start ↗</a></div>`).join("")}</div>`).join("")
+        : `<div class="card"><p class="muted">Nothing in the next 3 weeks.</p></div>`}`;
     $("[data-new]", v).onclick = () => editForm(v, null);
+    $("[data-ics]", v).onclick = downloadIcs;
   }
 
   /* Students: each gets a personal link (remembered on their device) */
@@ -199,7 +253,7 @@
           <span class="tag ${s.audience === "all" ? "" : "priv"}">${esc(whoFor(s))}</span></div>
         <p class="muted">${next ? "Next: <b>" + esc(fmtIST(next)) + " IST</b>" : "<b>Finished</b>"} · ${esc(s.duration)} min${(+s.weeks || 1) > 1 ? ` · weekly × ${esc(s.weeks)}` : ""} · ${esc(CC.platformOf(s.link))}</p>
         <div class="row"><button class="b g" data-copy>Copy invite link</button><a class="b w" target="_blank" rel="noopener" data-wa>WhatsApp invite</a>
-          <a class="b g" href="${esc(s.link)}" target="_blank" rel="noopener">Start class ↗</a><button class="b g" data-edit>Edit</button><button class="b g" data-del>Delete</button></div>`;
+          <a class="b g" href="${esc(s.link)}" target="_blank" rel="noopener">Start class ↗</a><a class="b g" href="${esc(gcalLink(s))}" target="_blank" rel="noopener">📆 Add to Google Calendar</a><button class="b g" data-edit>Edit</button><button class="b g" data-del>Delete</button></div>`;
       const text = `You're invited to "${s.title}"${next ? ` on ${fmtIST(next)} IST` : ""}. Open this link to see the time in your time zone and join: ${inviteUrl(s)}`;
       $("[data-wa]", c).href = wa(text);
       $("[data-copy]", c).onclick = (e) => copy(inviteUrl(s), e.target);
@@ -225,6 +279,7 @@
       <label>Class link — Zoom, Teams, Google Meet or WhatsApp<input name="link" type="url" required value="${esc(s?.link || "")}" placeholder="https://meet.google.com/…  ·  https://teams.microsoft.com/…  ·  https://…zoom.us/j/…  ·  https://call.whatsapp.com/…"></label>
       <div class="g2"><label>Meeting ID (optional)<input name="meetingId" value="${esc(s?.meetingId || "")}"></label>
         <label>Passcode (optional)<input name="passcode" value="${esc(s?.passcode || "")}"></label></div>
+      <label>Fee for each class, ₹ (optional — for your accounts only; students don't see it)<input name="fee" type="number" min="0" value="${esc(s?.fee || "")}"></label>
       <label>Notes for students (optional)<textarea name="notes" placeholder="e.g. Please keep your shruti box ready">${esc(s?.notes || "")}</textarea></label>
       <div class="row"><button class="b">${s ? "Save changes" : "Create class"}</button><button type="button" class="b g" data-back>Cancel</button></div><p class="err" data-e></p></form>`;
     $("[data-back]", v).onclick = () => main();
@@ -232,11 +287,104 @@
       e.preventDefault(); const f = e.target;
       if (!CC.validLink(f.link.value)) { $("[data-e]", v).textContent = "Please paste a Zoom, Microsoft Teams, Google Meet or WhatsApp (call.whatsapp.com / chat.whatsapp.com / wa.me) link."; return; }
       const rec = { title: f.title.value.trim(), start: new Date(`${f.date.value}T${f.time.value}:00+05:30`).toISOString(), duration: +f.duration.value || 60,
-        weeks: +f.weeks.value || 1, audience: f.who.value.startsWith("student:") ? "student" : f.who.value, studentId: f.who.value.startsWith("student:") ? f.who.value.slice(8) : undefined, link: f.link.value.trim(), meetingId: f.meetingId.value.trim(), passcode: f.passcode.value.trim(), notes: f.notes.value.trim() };
-      if (s) Object.assign(s, rec); else vault.sessions.push({ id: CC.randomId(), key: CC.randomKey(), ...rec });
+        weeks: +f.weeks.value || 1, audience: f.who.value.startsWith("student:") ? "student" : f.who.value, studentId: f.who.value.startsWith("student:") ? f.who.value.slice(8) : undefined, link: f.link.value.trim(), meetingId: f.meetingId.value.trim(), passcode: f.passcode.value.trim(), notes: f.notes.value.trim(), fee: f.fee.value === "" ? "" : +f.fee.value };
+      const hits = clashes(rec);
+      if (hits.length && !confirm(`⚠ This class clashes with ${hits.length === 1 ? "something in your calendar" : hits.length + " things in your calendar"}:\n\n` +
+        hits.slice(0, 5).map(({ d, c }) => `• ${fmtIST(d)} — ${c.title}`).join("\n") + `\n\nSchedule it anyway?`)) return;
+      let saved;
+      if (s) { Object.assign(s, rec); saved = s; } else { saved = { id: CC.randomId(), key: CC.randomKey(), ...rec }; vault.sessions.push(saved); }
       $$("button", f).forEach((b) => (b.disabled = true));
-      if (await save(s ? "Update class" : "Schedule class")) { tab = "classes"; main(); } else $$("button", f).forEach((b) => (b.disabled = false));
+      if (await save(s ? "Update class" : "Schedule class")) {
+        tab = "classes"; main();
+        if (confirm("Class saved ✓\n\nAdd it to your Google Calendar now? (Choose your 'Classes' calendar in Google.)")) window.open(gcalLink(saved), "_blank", "noopener");
+      } else $$("button", f).forEach((b) => (b.disabled = false));
     };
+  }
+
+  /* Payments received + Excel download (for accounts) — only you two see this */
+  function viewPayments(v) {
+    vault.payments ||= [];
+    const today = new Date().toISOString().slice(0, 10);
+    const monthStart = today.slice(0, 8) + "01";
+    const studentOpts = (sel) => (vault.students || []).map((st) => `<option ${sel === st.name ? "selected" : ""}>${esc(st.name)}</option>`).join("") + `<option ${sel === "Other" ? "selected" : ""}>Other</option>`;
+    const list = [...vault.payments].sort((a, b) => b.date.localeCompare(a.date));
+    v.innerHTML = `<div class="card"><h3>Download for accounts (Excel)</h3>
+        <div class="g3"><label>From<input type="date" data-from value="${monthStart}"></label><label>To<input type="date" data-to value="${today}"></label>
+        <label>&nbsp;<button class="b" data-xl>⬇ Download Excel</button></label></div>
+        <div class="row" data-periods>${[["tw","This week"],["lw","Last week"],["tm","This month"],["lm","Last month"],["tq","This quarter"],["lq","Last quarter"],["ty","This financial year"],["ly","Last financial year"]]
+          .map(([k, l]) => `<button type="button" class="b g" data-p="${k}">${l}</button>`).join("")}</div>
+        <p class="muted">Sheets: Summary per student (classes, fees, paid, balance) · every class (date, time, student, fee) · payments received · receipts by method & month (for cash / bank reconciliation). Quarters and years follow the Indian financial year (April–March).</p></div>
+      <div class="card"><h3>Record a payment received</h3><form data-payform>
+        <div class="g3"><label>Date<input name="date" type="date" value="${today}" required></label><label>Student<select name="student">${studentOpts()}</select></label>
+          <label>Amount ₹<input name="amount" type="number" min="0" required></label></div>
+        <div class="g3"><label>Method<select name="method"><option>Bank transfer</option><option>UPI</option><option>Cash</option><option>Razorpay / card</option><option>Other</option></select></label>
+          <label>Reference (optional)<input name="ref" placeholder="e.g. UTR / transaction no."></label><label>Note (optional)<input name="note" placeholder="e.g. October fees"></label></div>
+        <div class="row"><button class="b">Save payment</button></div></form></div>
+      <div class="card"><h3>Payments received</h3>${list.length ? list.map((p) => `<div class="row" style="justify-content:space-between;border-top:1px solid #efe6d8;padding-top:8px">
+          <div><b>₹${Number(p.amount).toLocaleString("en-IN")}</b> · ${esc(p.student)} · ${esc(p.date)}<div class="muted">${esc([p.method, p.ref, p.note].filter(Boolean).join(" · "))}</div></div>
+          <button class="b g" data-delpay="${esc(p.id)}">Remove</button></div>`).join("") : `<p class="muted">No payments recorded yet.</p>`}</div>`;
+    $("[data-payform]", v).onsubmit = async (e) => {
+      e.preventDefault(); const f = e.target;
+      vault.payments.push({ id: CC.randomId(), date: f.date.value, student: f.student.value, amount: +f.amount.value, method: f.method.value, ref: f.ref.value.trim(), note: f.note.value.trim() });
+      $$("button", f).forEach((b) => (b.disabled = true));
+      if (await save("Record payment")) main();
+    };
+    $$("[data-delpay]", v).forEach((b) => (b.onclick = async () => { if (!confirm("Remove this payment?")) return; vault.payments = vault.payments.filter((p) => p.id !== b.dataset.delpay); if (await save("Remove payment")) main(); }));
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const range = (k) => {
+      const n = new Date(); const y = n.getFullYear(), m = n.getMonth();
+      const monday = new Date(y, m, n.getDate() - ((n.getDay() + 6) % 7));
+      const fyStart = m >= 3 ? y : y - 1;                    // Indian FY: 1 April – 31 March
+      const qStart = new Date(y, Math.floor(m / 3) * 3, 1);   // FY quarters: Apr–Jun, Jul–Sep, Oct–Dec, Jan–Mar
+      switch (k) {
+        case "tw": return [monday, new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)];
+        case "lw": return [new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7), new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 1)];
+        case "tm": return [new Date(y, m, 1), new Date(y, m + 1, 0)];
+        case "lm": return [new Date(y, m - 1, 1), new Date(y, m, 0)];
+        case "tq": return [qStart, new Date(qStart.getFullYear(), qStart.getMonth() + 3, 0)];
+        case "lq": return [new Date(qStart.getFullYear(), qStart.getMonth() - 3, 1), new Date(qStart.getFullYear(), qStart.getMonth(), 0)];
+        case "ty": return [new Date(fyStart, 3, 1), new Date(fyStart + 1, 2, 31)];
+        case "ly": return [new Date(fyStart - 1, 3, 1), new Date(fyStart, 2, 31)];
+      }
+    };
+    $$("[data-p]", v).forEach((b) => (b.onclick = () => { const [f, t] = range(b.dataset.p); $("[data-from]", v).value = iso(f); $("[data-to]", v).value = iso(t);
+      $$("[data-p]", v).forEach((x) => x.classList.toggle("on", x === b)); $$("[data-p]", v).forEach((x) => (x.style.background = x === b ? "#2b211b" : "")); $$("[data-p]", v).forEach((x) => (x.style.color = x === b ? "#fff" : "")); }));
+    $("[data-xl]", v).onclick = async (e) => {
+      e.target.disabled = true; e.target.textContent = "Preparing…";
+      try { await downloadExcel($("[data-from]", v).value, $("[data-to]", v).value); }
+      catch (err) { O.msg("Could not create the Excel file: " + err.message, "err", 8000); }
+      finally { e.target.disabled = false; e.target.textContent = "⬇ Download Excel"; }
+    };
+  }
+
+  async function downloadExcel(from, to) {
+    if (!window.XLSX) await new Promise((ok, no) => { const t = document.createElement("script"); t.src = "vendor/xlsx.full.min.js"; t.onload = ok; t.onerror = () => no(new Error("library not loaded")); document.head.appendChild(t); });
+    const fmt = (d, o) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", ...o }).format(d);
+    const ymd = (d) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d).map((x) => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}`; };
+    const inRange = (dateStr) => (!from || dateStr >= from) && (!to || dateStr <= to);
+    const classRows = vault.sessions.flatMap((s) => CC.occurrences(s).map((d) => ({ s, d }))).filter(({ d }) => inRange(ymd(d))).sort((a, b) => a.d - b.d)
+      .map(({ s, d }) => { const end = new Date(d.getTime() + (+s.duration || 60) * 6e4);
+        return { "Date": ymd(d), "Day": fmt(d, { weekday: "short" }), "Start (IST)": fmt(d, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }), "End (IST)": fmt(end, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }),
+          "Minutes": +s.duration || 60, "Student": whoFor(s), "Class": s.title, "Type": s.audience === "all" ? "Group" : s.audience === "student" ? "1:1" : "Link only",
+          "Platform": CC.platformOf(s.link), "Fee (₹)": s.fee === "" || s.fee == null ? "" : +s.fee, "Status": d < new Date() ? "Held" : "Upcoming" }; });
+    const payRows = (vault.payments || []).filter((p) => inRange(p.date)).sort((a, b) => a.date.localeCompare(b.date))
+      .map((p) => ({ "Date": p.date, "Student": p.student, "Amount (₹)": +p.amount, "Method": p.method, "Reference": p.ref || "", "Note": p.note || "" }));
+    const names = [...new Set([...classRows.map((r) => r.Student), ...payRows.map((r) => r.Student)])].sort();
+    const sum = names.map((n) => { const cl = classRows.filter((r) => r.Student === n), fees = cl.reduce((t, r) => t + (+r["Fee (₹)"] || 0), 0), paid = payRows.filter((r) => r.Student === n).reduce((t, r) => t + r["Amount (₹)"], 0);
+      return { "Student": n, "Classes": cl.length, "Held": cl.filter((r) => r.Status === "Held").length, "Fees (₹)": fees, "Paid (₹)": paid, "Balance (₹)": fees - paid }; });
+    if (sum.length) sum.push({ "Student": "TOTAL", "Classes": sum.reduce((t, r) => t + r.Classes, 0), "Held": sum.reduce((t, r) => t + r.Held, 0), "Fees (₹)": sum.reduce((t, r) => t + r["Fees (₹)"], 0), "Paid (₹)": sum.reduce((t, r) => t + r["Paid (₹)"], 0), "Balance (₹)": sum.reduce((t, r) => t + r["Balance (₹)"], 0) });
+    const methods = [...new Set(payRows.map((r) => r.Method))].sort();
+    const months = [...new Set(payRows.map((r) => r.Date.slice(0, 7)))].sort();
+    const byMethod = months.map((mo) => { const row = { "Month": mo }; let t = 0; methods.forEach((me) => { const a = payRows.filter((r) => r.Date.startsWith(mo) && r.Method === me).reduce((x, r) => x + r["Amount (₹)"], 0); row[me] = a; t += a; }); row["Total (₹)"] = t; return row; });
+    if (byMethod.length) { const tot = { "Month": "TOTAL" }; methods.forEach((me) => (tot[me] = byMethod.reduce((x, r) => x + r[me], 0))); tot["Total (₹)"] = byMethod.reduce((x, r) => x + r["Total (₹)"], 0); byMethod.push(tot); }
+    const wb = XLSX.utils.book_new();
+    const sheet = (rows, header, widths) => { const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [Object.fromEntries(header.map((h) => [h, ""]))], { header }); ws["!cols"] = widths.map((w) => ({ wch: w })); return ws; };
+    XLSX.utils.book_append_sheet(wb, sheet(sum, ["Student", "Classes", "Held", "Fees (₹)", "Paid (₹)", "Balance (₹)"], [24, 9, 7, 11, 11, 12]), "Summary");
+    XLSX.utils.book_append_sheet(wb, sheet(classRows, ["Date", "Day", "Start (IST)", "End (IST)", "Minutes", "Student", "Class", "Type", "Platform", "Fee (₹)", "Status"], [11, 5, 10, 9, 8, 22, 30, 9, 15, 9, 10]), "Classes");
+    XLSX.utils.book_append_sheet(wb, sheet(payRows, ["Date", "Student", "Amount (₹)", "Method", "Reference", "Note"], [11, 22, 11, 16, 22, 30]), "Payments");
+    XLSX.utils.book_append_sheet(wb, sheet(byMethod, ["Month", ...methods, "Total (₹)"], [10, ...methods.map(() => 15), 12]), "Receipts by method");
+    XLSX.writeFile(wb, `Classes-and-payments_${from || "start"}_to_${to || "today"}.xlsx`);
+    O.msg("Excel downloaded ✓", "ok");
   }
 
   function viewAvailability(v) {
@@ -281,6 +429,14 @@
           <div class="g2"><label>Your UPI ID<input data-upi placeholder="e.g. vilasini@okicici" value="${esc(vault.payment.upiId || "")}"></label>
             <label>Name shown to students<input data-upiname value="${esc(vault.payment.upiName || "")}" placeholder="S.M. Vilasini"></label></div>
           <label>Payment note (optional)<input data-paynote value="${esc(vault.payment.note || "")}" placeholder="e.g. Please WhatsApp the payment screenshot to confirm your slot"></label></div>
+        <div class="card"><h3>Bank transfer details (optional)</h3>
+          <p class="muted">Shown only to your invited students, with copy buttons. Leave empty to hide.</p>
+          <div class="g2"><label>Account holder name<input data-bk="holder" value="${esc(vault.payment.bank?.holder || "")}"></label>
+            <label>Bank name<input data-bk="bank" value="${esc(vault.payment.bank?.bank || "")}"></label></div>
+          <div class="g3"><label>Account number<input data-bk="account" value="${esc(vault.payment.bank?.account || "")}" autocomplete="off"></label>
+            <label>IFSC code<input data-bk="ifsc" value="${esc(vault.payment.bank?.ifsc || "")}"></label>
+            <label>Branch (optional)<input data-bk="branch" value="${esc(vault.payment.bank?.branch || "")}"></label></div>
+          <label>For students abroad (optional — e.g. SWIFT code)<input data-bk="intl" value="${esc(vault.payment.bank?.intl || "")}"></label></div>
         <div class="row"><button class="b" data-save>Save fees & payment</button></div>`;
       const R = $("[data-rows]", v);
       rows.forEach((r, i) => {
@@ -298,7 +454,8 @@
       $("[data-save]", v).onclick = async (e) => {
         vault.plans = rows.filter((r) => r.name.trim());
         vault.intro = $("[data-intro]", v).value.trim();
-        vault.payment = { upiId: $("[data-upi]", v).value.trim(), upiName: $("[data-upiname]", v).value.trim(), note: $("[data-paynote]", v).value.trim() };
+        const bank = Object.fromEntries($$("[data-bk]", v).map((i) => [i.dataset.bk, i.value.trim()]));
+        vault.payment = { upiId: $("[data-upi]", v).value.trim(), upiName: $("[data-upiname]", v).value.trim(), note: $("[data-paynote]", v).value.trim(), bank };
         e.target.disabled = true; await save("Update class fees"); e.target.disabled = false;
       };
     };

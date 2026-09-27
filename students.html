@@ -134,7 +134,11 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
   // Next 2 weeks of her weekly slots; any slot overlapping another student's class shows "Not available" (no details)
   const istHM = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
   const istT = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
-  const busy = ((info && info.busy) || []).map((x) => [new Date(x.s).getTime(), new Date(x.e).getTime()]);
+  // her "Not available" times: other students' classes + concerts (in the payload) + anything in her Google Classes calendar (busy.json)
+  let extraBusy = []; try { extraBusy = await (await fetch("busy.json?t=" + Date.now())).json(); } catch {}
+  const mineStarts = new Set(sessions.flatMap((x) => CC.occurrences(x).map((d) => d.getTime())));
+  const busy = [...((info && info.busy) || []), ...(Array.isArray(extraBusy) ? extraBusy : [])].map((x) => [new Date(x.s).getTime(), new Date(x.e).getTime()])
+    .filter(([bs]) => !mineStarts.has(bs));   // a student's own class (also in Google) isn't "not available" to them
   const mine = sessions.flatMap((x) => CC.occurrences(x).map((d) => [d.getTime(), d.getTime() + (+x.duration || 60) * 6e4]));
   const slots = [];
   for (const a of (info && info.availability) || []) {
@@ -167,7 +171,7 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
       <section style="display:grid;gap:12px"><h2>${mode === "portal" ? "Upcoming classes" : "Your class"}</h2>
         ${upcoming.length ? upcoming.map(classCard).join("") : `<div class="card"><p class="muted">${mode === "portal" ? "No classes scheduled right now — request one below." : "This class has finished. Please ask for a new link."}</p></div>`}
         <p class="tz">Times are shown in your time zone: <b>${esc(tz)}</b>.</p></section>
-      ${info && ((info.plans || []).length || info.upiId) ? `<section style="display:grid;gap:12px"><h2>Fees & payment</h2>
+      ${info && ((info.plans || []).length || info.upiId || Object.keys(info.bank || {}).length) ? `<section style="display:grid;gap:12px"><h2>Fees & payment</h2>
         ${info.intro ? `<p style="margin:0">${esc(info.intro)}</p>` : ""}
         ${(info.plans || []).map((p, i) => `<div class="card"><div class="row" style="justify-content:space-between"><h3>${esc(p.name)}</h3>
             <div class="cls__when">${[p.priceINR ? "₹" + Number(p.priceINR).toLocaleString("en-IN") : "", p.priceUSD ? "$" + esc(p.priceUSD) : ""].filter(Boolean).join(" · ")}</div></div>
@@ -175,6 +179,10 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
           <div class="row">${info.upiId && p.priceINR ? `<a class="btn" href="${esc(upiLink(p.priceINR, p.name))}">Pay with UPI</a><button class="btn btn--ghost" data-qr="${i}">Show UPI QR code</button>` : ""}
             ${p.payLink ? `<a class="btn ${info.upiId ? "btn--ghost" : ""}" href="${esc(p.payLink)}" target="_blank" rel="noopener">Pay online (card / international)</a>` : ""}</div>
           <div data-qr-box="${i}" hidden style="text-align:center"></div></div>`).join("")}
+        ${info.bank && (info.bank.account || info.bank.ifsc) ? `<div class="card"><h3>Bank transfer</h3>
+          ${[["Account name", info.bank.holder], ["Bank", info.bank.bank], ["Account number", info.bank.account], ["IFSC", info.bank.ifsc], ["Branch", info.bank.branch], ["International", info.bank.intl]]
+            .filter(([, v]) => v).map(([k, v]) => `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><div><div class="meta">${esc(k)}</div><b>${esc(v)}</b></div>
+            <button class="btn btn--ghost" data-copy="${esc(v)}">Copy</button></div>`).join("")}</div>` : ""}
         ${info.upiId ? `<p class="muted">UPI: <b>${esc(info.upiId)}</b>${info.upiName ? " · " + esc(info.upiName) : ""}. Works with GPay, PhonePe, Paytm and any UPI app.${info.payNote ? " " + esc(info.payNote) : ""}</p>` : info.payNote ? `<p class="muted">${esc(info.payNote)}</p>` : ""}
       </section>` : ""}
       ${mode === "portal" ? `<section style="display:grid;gap:12px"><h2>My availability</h2>
@@ -199,6 +207,7 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
       box.innerHTML = `<img src="${q.createDataURL(6, 12)}" alt="UPI QR code" style="max-width:240px;width:100%"><p class="muted">Scan with any UPI app · ₹${Number(p.priceINR).toLocaleString("en-IN")}</p>`;
     } catch { box.innerHTML = `<p class="muted">Couldn't load the QR code — pay to UPI ID <b>${esc(info.upiId)}</b>.</p>`; }
   });
+  document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied ✓"; setTimeout(() => (b.textContent = "Copy"), 1500); } catch { prompt("Copy:", b.dataset.copy); } });
   const req = document.querySelector("[data-req]");
   if (req) req.onsubmit = (e) => { e.preventDefault(); const f = e.target;
     window.open(contact(`Namaste! I'm ${f.n.value}.${f.t.value ? " Preferred time: " + f.t.value + " (" + tz + ")." : ""} ${f.m.value}`.trim()), "_blank"); };
