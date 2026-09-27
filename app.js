@@ -229,12 +229,21 @@
       ${(a.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}<p class="muted">— ${esc(A.name)}</p></article>`);
   });
 
-  /* ---------- press & reviews ----------
-     press.json is built by a GitHub Action from the links in content.js (headline + picture found automatically). */
+  /* ---------- accomplishments: awards (content.js) + press (press.json) ---------- */
+  const accSection = $("[data-acc-section]");
+  const refreshAcc = () => { accSection.hidden = $("[data-achievements-wrap]").hidden && $("[data-press-wrap]").hidden; observe(); };
+  const achv = (S.achievements || []).filter((x) => x && x.title)
+    .sort((a, b) => String(b.year || "").localeCompare(String(a.year || "")));
+  if (achv.length) {
+    $("[data-achievements-wrap]").hidden = false;
+    $("[data-achievements]").innerHTML = achv.map((x) => {
+      const inner = `${x.year ? `<div class="achv__year">${esc(x.year)}</div>` : ""}<div class="achv__title">${esc(x.title)}</div>
+        ${x.detail ? `<div class="achv__detail">${esc(x.detail)}</div>` : ""}${x.link ? `<span class="achv__go">View ↗</span>` : ""}`;
+      return x.link ? `<a class="achv reveal" href="${esc(x.link)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="achv reveal">${inner}</div>`;
+    }).join("");
+  }
   const renderPress = (items) => {
-    const sec = $("[data-press-section]");
-    if (!items.length) { sec.hidden = true; return; }
-    sec.hidden = false;
+    $("[data-press-wrap]").hidden = !items.length;
     const fmtD = (d) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "";
     $("[data-press]").innerHTML = items.map((p) => {
       const ph = `<div class="press-card__ph">${esc(p.source || "Press")}</div>`;
@@ -244,7 +253,7 @@
           <h3 class="press-card__title">${esc(p.title || p.url)}</h3>${p.quote ? `<p class="press-card__quote">“${esc(p.quote)}”</p>` : ""}
           <span class="press-card__go">Read article ↗</span></div></a>`;
     }).join("");
-    observe();
+    refreshAcc();
   };
   const manualPress = (S.press || []).map((p) => (typeof p === "string" ? { url: p } : p)).filter((p) => p.url);
   renderPress(manualPress.filter((p) => p.title));
@@ -255,6 +264,46 @@
     const hidden = new Set(S.pressHidden || []);
     renderPress([...byUrl.values()].filter((p) => !hidden.has(p.url)).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
   }).catch(() => {});
+  refreshAcc();
+
+  /* ---------- newsletter ---------- */
+  const NL = { enabled: true, heading: "Stay in tune", text: "Concert dates, new videos and class openings — straight to your inbox. No spam, unsubscribe anytime.",
+    provider: "email", ...(S.newsletter || {}) };
+  if (NL.enabled) {
+    $("[data-newsletter]").hidden = false;
+    $("[data-nl-heading]").textContent = NL.heading; $("[data-nl-text]").textContent = NL.text;
+    const box = $("[data-nl-form]");
+    const name = (NL.substack || "").replace(/^https?:\/\//, "").replace(/\.substack\.com.*$/, "").trim();
+    if (NL.provider === "substack" && name) {
+      box.innerHTML = `<iframe class="nl-embed" src="https://${esc(name)}.substack.com/embed" title="Subscribe" loading="lazy"></iframe>`;
+    } else {
+      const direct = NL.provider === "buttondown" && NL.buttondown ? `https://buttondown.com/api/emails/embed-subscribe/${encodeURIComponent(NL.buttondown)}`
+        : NL.provider === "form" && NL.formAction ? NL.formAction : "";
+      const field = NL.provider === "form" ? (NL.emailField || "email") : "email";
+      box.innerHTML = `<form class="nl-form" ${direct ? `action="${esc(direct)}" method="post" target="_blank"` : ""} data-nl>
+        <input type="email" name="${esc(field)}" placeholder="Your email address" aria-label="Email address" required autocomplete="email">
+        <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+        <button class="btn" type="submit">Subscribe</button><p class="nl-note" role="status" aria-live="polite"></p></form>`;
+      const f = $("[data-nl]", box), note = $(".nl-note", f);
+      f.addEventListener("submit", async (e) => {
+        const email = f.querySelector("input[type=email]").value.trim();
+        if (!f.checkValidity()) { e.preventDefault(); note.textContent = "Please enter a valid email address."; return; }
+        if (direct) { note.textContent = "Almost done — please confirm in the window that opened."; return; }
+        e.preventDefault();
+        if (f.botcheck.checked) return;
+        if (!S.contactFormKey) {
+          location.href = `mailto:${soc.email}?subject=${encodeURIComponent("Newsletter: please add me")}&body=${encodeURIComponent("Please add " + email + " to your newsletter.")}`;
+          return;
+        }
+        note.textContent = "Subscribing…";
+        try {
+          const r = await fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ access_key: S.contactFormKey, subject: "New newsletter subscriber", from_name: (A.name || "") + " website", email, message: `Newsletter signup: ${email}` }) });
+          if ((await r.json()).success) { f.reset(); note.textContent = "Thank you! You're on the list."; } else throw 0;
+        } catch { note.textContent = "Sorry, that didn't work — please try again later."; }
+      });
+    }
+  }
 
   /* ---------- about ---------- */
   const ph = $("[data-photo]");
@@ -315,6 +364,10 @@
     performerIn: upcoming.filter((e) => e.type === "Concert").map((e) => ({ "@type": "MusicEvent", name: e.title, startDate: e.date,
       location: { "@type": "Place", name: e.venue || e.city, address: e.city } })) };
   const s = document.createElement("script"); s.type = "application/ld+json"; s.textContent = JSON.stringify(ld); document.head.appendChild(s);
+
+  /* ---------- "Edit site" button: only on devices where she has signed in to the editor ---------- */
+  let isOwner = false; try { isOwner = !!localStorage.getItem("editor-token"); } catch {}
+  if (isOwner || params.get("edit") === "1") { $("[data-edit-fab]").hidden = false; $("[data-edit-link]").hidden = false; }
 
   /* ---------- reveal on scroll ---------- */
   var io;

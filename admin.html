@@ -139,6 +139,11 @@ textarea{min-height:90px;resize:vertical}
       T("artist.bio", "About (bio)", { type: "paragraphs", help: "Leave a blank line between paragraphs." }) ] },
     { title: "Highlights", hint: "Years of training, concerts…", open: true, list: { path: "artist.stats", add: "Add highlight",
       item: [T("value", "Number", { help: "e.g. 20+" }), T("label", "Label", { help: "e.g. Years of training" })], title: (x) => `${x.value || ""} ${x.label || ""}` } },
+    { title: "Awards & achievements", hint: "Titles, awards, milestones", list: { path: "achievements", add: "Add achievement", newFirst: true,
+      title: (x) => `${x.year || ""} ${x.title || ""}`, item: [
+      T("year", "Year", { help: "e.g. 2019" }), T("title", "Award / achievement", { help: "e.g. 'Yuva Kala Bharathi' title" }),
+      T("detail", "Given by / details", { type: "textarea", help: "e.g. Conferred by Bharat Kalachar, Chennai" }),
+      T("link", "Link (optional)", { help: "A news article, certificate photo or video about it" }) ] } },
     { title: "Online classes", hint: "Switch on/off, prices, payment links", fields: [
       T("classes.enabled", "Show classes on the website", { type: "check" }),
       T("classes.inviteOnly", "Invite-only (students need the access code)", { type: "check" }),
@@ -164,6 +169,16 @@ textarea{min-height:90px;resize:vertical}
     { title: "What people say", hint: "Testimonials", list: { path: "testimonials", add: "Add testimonial", title: (x) => x.name, item: [
       T("quote", "Quote", { type: "textarea" }), T("name", "Name"), T("place", "Place") ] } },
     { title: "Featured in & collaborations", hint: "Names shown in a strip", list: { path: "featuredIn", add: "Add name", string: true } },
+    { title: "Newsletter", hint: "Sign-up box on the website", fields: [
+      T("newsletter.enabled", "Show the newsletter sign-up", { type: "check" }),
+      T("newsletter.heading", "Heading", { help: "e.g. Stay in tune" }),
+      T("newsletter.text", "Short text", { type: "textarea" }),
+      T("newsletter.provider", "How sign-ups are collected", { type: "select", options: ["email", "substack", "buttondown", "form"],
+        help: "email = each sign-up is emailed to you (needs the Web3Forms key below) · substack / buttondown = free newsletter services · form = Mailchimp or MailerLite form link" }),
+      T("newsletter.substack", "Substack name", { help: "e.g. vilasini  (from vilasini.substack.com)" }),
+      T("newsletter.buttondown", "Buttondown username"),
+      T("newsletter.formAction", "Mailchimp / MailerLite form action link"),
+      T("newsletter.emailField", "Email field name for that form", { help: "Mailchimp: EMAIL · MailerLite: fields[email]" }) ] },
     { title: "Contact & social links", hint: "Email, WhatsApp, Instagram…", fields: [
       T("social.email", "Email"), T("social.whatsapp", "WhatsApp number", { help: "Country code + number, no + or spaces, e.g. 919876543210" }),
       T("social.youtube", "YouTube link"), T("social.instagram", "Instagram link"), T("social.facebook", "Facebook link"), T("social.spotify", "Spotify link"),
@@ -329,6 +344,8 @@ textarea{min-height:90px;resize:vertical}
     const src = b64decode(file.content);
     data = new Function("window", src + "\n;return window.SITE;")({});
     if (!data) throw new Error("content.js could not be read");
+    data.newsletter = { enabled: true, heading: "Stay in tune", text: "Concert dates, new videos and class openings — straight to your inbox. No spam, unsubscribe anytime.", provider: "email", ...(data.newsletter || {}) };
+    data.achievements ??= []; data.press ??= [];
   }
 
   async function save() {

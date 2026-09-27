@@ -27,7 +27,7 @@
         <a href="#music">Music</a>
         <a href="#events">Concerts</a>
         <a href="#classes" data-classes-link hidden>Classes</a>
-        <a href="#press">Press</a>
+        <a href="#accomplishments">Accomplishments</a>
         <a href="#articles">Articles</a>
         <a href="#about">About</a>
         <a href="#contact" class="btn btn--small">Contact</a>
@@ -112,14 +112,21 @@
       </div>
     </section>
 
-    <!-- PRESS & REVIEWS (headline + picture fetched automatically) -->
-    <section class="section" id="press" data-press-section hidden>
+    <!-- ACCOMPLISHMENTS: awards (typed in the editor) + press (fetched automatically) -->
+    <section class="section" id="accomplishments" data-acc-section hidden>
       <div class="wrap">
         <div class="section__head reveal">
-          <p class="eyebrow">In the press</p>
-          <h2>Reviews &amp; features</h2>
+          <p class="eyebrow">Accomplishments</p>
+          <h2>Awards, honours &amp; press</h2>
         </div>
-        <div class="press" data-press></div>
+        <div data-achievements-wrap hidden>
+          <h3 class="subhead reveal">Awards &amp; achievements</h3>
+          <div class="achievements" data-achievements></div>
+        </div>
+        <div data-press-wrap hidden>
+          <h3 class="subhead reveal">In the press</h3>
+          <div class="press" data-press></div>
+        </div>
       </div>
     </section>
 
@@ -137,6 +144,18 @@
       <div class="wrap">
         <div class="quotes" data-quotes></div>
         <div class="featured-in reveal" data-featured-in></div>
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section class="newsletter" id="newsletter" data-newsletter hidden>
+      <div class="wrap newsletter__inner reveal">
+        <div>
+          <p class="eyebrow">Newsletter</p>
+          <h2 data-nl-heading>Stay in tune</h2>
+          <p class="muted" data-nl-text></p>
+        </div>
+        <div data-nl-form></div>
       </div>
     </section>
 
@@ -177,7 +196,7 @@
 
   <footer class="footer">
     <div class="wrap footer__inner">
-      <p>© <span data-year></span> <span data-bind="name"></span>. All rights reserved. · <a href="admin.html" class="footer__edit">Edit site</a></p>
+      <p>© <span data-year></span> <span data-bind="name"></span>. All rights reserved.<span data-edit-link hidden> · <a href="admin.html" class="footer__edit">Edit site</a></span></p>
       <ul class="footer__social" data-social></ul>
     </div>
   </footer>
@@ -190,6 +209,8 @@
       <div class="modal__content" data-modal-content></div>
     </div>
   </div>
+
+  <a href="admin.html" class="edit-fab" data-edit-fab hidden aria-label="Edit this website">✎ Edit site</a>
 
   <script src="content.js"></script>
   <script src="app.js"></script>
