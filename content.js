@@ -1,7 +1,6 @@
 /* =====================================================================
    CONTENT.JS — all website text lives here.
-   Easiest way to edit: open the website on your signed-in device and tap "Edit page",
-   or use https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
+   Easiest way to edit: open  https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
    ===================================================================== */
 
 window.SITE = {
@@ -9,7 +8,7 @@ window.SITE = {
     "name": "S.M. Vilasini",
     "tagline": "Vocalist · Composer · Teacher",
     "location": "Chennai, India",
-    "photo": "assets/portrait.jpg",
+    "photo": "assets/portrait.jpg?v=1790548532022",
     "heroLine": "Music rooted in tradition, shared with students across the world.",
     "bio": [
       "Trained from the age of six, Vilasini blends the depth of classical music with a contemporary voice. She performs across India and online, and has taught students in over a dozen countries.",
