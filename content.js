@@ -72,49 +72,7 @@ window.SITE = {
       "category": "Originals"
     }
   ],
-  "announcements": [
-    {
-      "type": "Concert",
-      "title": "December Music Season Recital",
-      "date": "2026-12-18",
-      "time": "18:30",
-      "venue": "City Music Hall",
-      "city": "Chennai",
-      "link": "",
-      "linkLabel": "Get tickets"
-    },
-    {
-      "type": "Online",
-      "title": "Free Live Masterclass on YouTube",
-      "date": "2026-11-08",
-      "time": "19:00",
-      "venue": "YouTube Live",
-      "city": "Online",
-      "link": "https://www.youtube.com/@Vilzbuzz",
-      "linkLabel": "Set a reminder"
-    },
-    {
-      "type": "New venture",
-      "title": "Debut Album — Recording Begins",
-      "date": "2027-01-15",
-      "time": "",
-      "venue": "",
-      "city": "",
-      "link": "",
-      "linkLabel": "",
-      "note": "Follow along as I record my first album of original compositions."
-    },
-    {
-      "type": "Concert",
-      "title": "Summer Festival Performance",
-      "date": "2026-05-10",
-      "time": "18:00",
-      "venue": "Festival Grounds",
-      "city": "Bengaluru",
-      "link": "",
-      "linkLabel": ""
-    }
-  ],
+  "announcements": [],
   "classes": {
     "enabled": false,
     "inviteOnly": false,
