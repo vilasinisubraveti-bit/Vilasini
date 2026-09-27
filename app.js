@@ -35,8 +35,11 @@
   $("[data-stats]").innerHTML = (A.stats || []).map((s) =>
     `<div><div class="stat__v">${esc(s.value)}</div><div class="stat__l">${esc(s.label)}</div></div>`).join("");
 
-  /* ---------- videos ---------- */
-  const videos = (S.videos || []).filter((v) => v.title || v.id);
+  /* ---------- videos ----------
+     Hand-picked videos in content.js come first (keep their category/featured).
+     videos.json is refreshed daily from YouTube by the GitHub Action and adds the rest. */
+  const manual = (S.videos || []).filter((v) => v.title || v.id);
+  let videos = manual;
   const videoCard = (v, i, hero) => {
     const thumb = v.id
       ? `<img src="https://i.ytimg.com/vi/${esc(v.id)}/${hero ? "maxresdefault" : "hqdefault"}.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg'">`
@@ -45,25 +48,38 @@
       <div class="video__thumb">${thumb}<span class="play" aria-hidden="true"></span></div>
       <div class="video__meta"><div class="video__cat">${esc(v.category)}</div><div class="video__title">${esc(v.title)}</div></div></button>`;
   };
-  const featured = videos.find((v) => v.featured) || videos[0];
-  if (featured) $("[data-featured]").innerHTML = videoCard(featured, videos.indexOf(featured), true);
-
-  const cats = ["All", ...new Set(videos.map((v) => v.category).filter(Boolean))];
   let activeCat = "All";
   const renderVideos = () => {
     $("[data-videos]").innerHTML = videos.map((v, i) => [v, i])
       .filter(([v]) => activeCat === "All" || v.category === activeCat)
       .map(([v, i]) => videoCard(v, i)).join("");
+    observe && observe();
   };
-  $("[data-filters]").innerHTML = cats.length > 2 ? cats.map((c) =>
-    `<button class="chip ${c === "All" ? "is-active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("") : "";
+  const setupVideos = () => {
+    const featured = videos.find((v) => v.featured) || videos[0];
+    $("[data-featured]").innerHTML = featured ? videoCard(featured, videos.indexOf(featured), true) : "";
+    const cats = ["All", ...new Set(videos.map((v) => v.category).filter(Boolean))];
+    activeCat = "All";
+    $("[data-filters]").innerHTML = cats.length > 2 ? cats.map((c) =>
+      `<button class="chip ${c === "All" ? "is-active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("") : "";
+    renderVideos();
+  };
   $("[data-filters]").addEventListener("click", (e) => {
     const b = e.target.closest("[data-cat]"); if (!b) return;
     activeCat = b.dataset.cat;
     $$(".chip").forEach((c) => c.classList.toggle("is-active", c === b));
     renderVideos();
   });
-  renderVideos();
+  setupVideos();
+  fetch("videos.json", { cache: "no-cache" }).then((r) => r.ok ? r.json() : []).then((auto) => {
+    if (!Array.isArray(auto) || !auto.length) return;
+    const curated = manual.filter((v) => v.id);
+    const seen = new Set(curated.map((v) => v.id));
+    const extra = auto.filter((v) => v.id && !seen.has(v.id))
+      .map((v) => ({ id: v.id, title: v.title, category: v.category || S.autoVideoCategory || "Latest" }));
+    videos = [...curated, ...extra];
+    setupVideos();
+  }).catch(() => {});
 
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-video]"); if (!b) return;

@@ -25,7 +25,7 @@ window.SITE = {
 
   /* ---------- 2. SOCIAL & CONTACT LINKS (leave "" to hide) ---------- */
   social: {
-    youtube:   "https://www.youtube.com/@yourchannel",
+    youtube:   "https://www.youtube.com/@Vilzbuzz",
     instagram: "https://www.instagram.com/yourhandle",
     spotify:   "",
     facebook:  "",
@@ -33,7 +33,14 @@ window.SITE = {
     email:     "vilasinisubraveti@gmail.com"
   },
 
-  /* ---------- 3. YOUTUBE VIDEOS ----------
+  /* ---------- 3a. AUTO-LOAD VIDEOS FROM YOUTUBE ----------
+     Her @handle (e.g. "@Vilzbuzz") or Channel ID (starts with "UC") — either works.
+     Her latest uploads then appear on the site automatically (checked daily).  */
+  youtubeChannelId: "@Vilzbuzz",
+  autoVideoCategory: "Latest",
+
+  /* ---------- 3b. HAND-PICKED VIDEOS (optional) ----------
+     These show first, with your own categories. Leave ids "" to skip.
      id = the part after "watch?v=" in the YouTube link
      e.g. https://www.youtube.com/watch?v=AbC123xYz  ->  id: "AbC123xYz"
      featured: true shows it large on the home screen (use for one video)  */
@@ -50,7 +57,7 @@ window.SITE = {
      date format: "YYYY-MM-DD". Past dates move to "Past" automatically. */
   announcements: [
     { type: "Concert",  title: "December Music Season Recital", date: "2026-12-18", time: "18:30", venue: "City Music Hall", city: "Chennai", link: "", linkLabel: "Get tickets" },
-    { type: "Online",   title: "Free Live Masterclass on YouTube", date: "2026-11-08", time: "19:00", venue: "YouTube Live", city: "Online", link: "https://www.youtube.com/@yourchannel", linkLabel: "Set a reminder" },
+    { type: "Online",   title: "Free Live Masterclass on YouTube", date: "2026-11-08", time: "19:00", venue: "YouTube Live", city: "Online", link: "https://www.youtube.com/@Vilzbuzz", linkLabel: "Set a reminder" },
     { type: "New venture", title: "Debut Album — Recording Begins", date: "2027-01-15", time: "", venue: "", city: "", link: "", linkLabel: "", note: "Follow along as I record my first album of original compositions." },
     { type: "Concert",  title: "Summer Festival Performance", date: "2026-05-10", time: "18:00", venue: "Festival Grounds", city: "Bengaluru", link: "", linkLabel: "" }
   ],
