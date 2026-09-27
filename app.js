@@ -116,10 +116,14 @@
         ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}</div>
     </article>`;
   };
+  let igConcerts = 0; // number of Instagram concert posts (shown inside the Past tab)
   const renderEvents = () => {
     const list = activeTab === "past" ? past : upcoming;
+    $("#events").classList.toggle("is-past", activeTab === "past");
+    const pastBtn = $('[data-events-tab="past"]'); if (pastBtn) pastBtn.textContent = `Past${past.length + igConcerts ? ` (${past.length + igConcerts})` : ""}`;
     $("[data-events]").innerHTML = list.length ? list.map((e) => eventHTML(e, activeTab === "past")).join("")
-      : `<p class="empty">${activeTab === "past" ? "No past events yet." : "New dates announced soon — follow on YouTube and Instagram."}</p>`;
+      : (activeTab === "past" && igConcerts) ? ""
+      : `<p class="empty">${activeTab === "past" ? "No past events yet." : "New dates announced soon — see past concerts in the Past tab."}</p>`;
     observe();
   };
   $$("[data-events-tab]").forEach((t) => t.addEventListener("click", () => {
@@ -184,7 +188,9 @@
     const posts = items.map((u) => (typeof u === "string" ? { url: u, type: "concert" } : u)).filter((x) => x && (x.type || "concert") === type)
       .map((x) => igCode(x.url)).filter((c) => c && !hidden.has(c) && !seen.has(c) && seen.add(c))
       .map((c) => ({ code: c, date: igDate(c) })).sort((a, b) => (b.date || 0) - (a.date || 0));
-    const wrap = $(wrapSel); wrap.hidden = !posts.length; if (type === "honour") refreshAcc(); if (!posts.length) return;
+    const wrap = $(wrapSel); wrap.hidden = !posts.length; if (type === "honour") refreshAcc();
+    if (type === "concert") { igConcerts = posts.length; renderEvents(); }
+    if (!posts.length) return;
     let shown = 0; const PAGE = 6, grid = $(gridSel), more = $(moreSel);
     const addPage = () => {
       posts.slice(shown, shown + PAGE).forEach((p) => {

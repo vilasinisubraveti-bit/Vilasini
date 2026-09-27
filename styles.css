@@ -306,3 +306,7 @@ a.achv:hover{transform:translateY(-3px);border-color:var(--accent)}
 .award__more{margin-top:auto;color:var(--accent);font-weight:500;font-size:.9rem;padding-top:6px}
 .award-full img.award-full__img{width:100%;border-radius:12px;margin:10px 0 18px}
 .award-full__video{aspect-ratio:16/9;margin:18px 0}.award-full__video iframe{width:100%;height:100%;border:0;border-radius:12px}
+
+/* Instagram concerts live inside the "Past" tab */
+#events:not(.is-past) [data-insta-wrap]{display:none}
+#events.is-past .insta{margin-top:28px}
