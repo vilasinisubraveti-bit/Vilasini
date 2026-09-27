@@ -311,6 +311,7 @@
 
   /* ---------- articles ---------- */
   const arts = (S.articles || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  if (!arts.length) { const sec = document.getElementById("articles"); if (sec) sec.hidden = true; document.querySelectorAll('a[href="#articles"]').forEach((l) => (l.hidden = true)); }
   const fmt = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
   $("[data-articles]").innerHTML = arts.map((a, i) => `<button class="article reveal" data-article="${i}">
     <div class="article__meta"><span class="article__tag">${esc(a.tag)}</span><span>${fmt(a.date)}</span>${a.readTime ? `<span>· ${esc(a.readTime)}</span>` : ""}</div>

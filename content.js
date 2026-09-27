@@ -34,7 +34,7 @@ window.SITE = {
     "instagram": "https://www.instagram.com/yourhandle",
     "spotify": "",
     "facebook": "",
-    "whatsapp": "919876543210",
+    "whatsapp": "",
     "email": "vilasinisubraveti@gmail.com"
   },
   "youtubeChannelId": "@Vilzbuzz",
@@ -79,32 +79,7 @@ window.SITE = {
     "accessCode": "RAGA2026",
     "platform": "Zoom",
     "intro": "Live one-to-one and small-group lessons on Zoom, for students anywhere in the world. Every plan includes practice recordings and notes after each class.",
-    "plans": [
-      {
-        "name": "Trial Lesson",
-        "detail": "1 × 30 min · one-to-one",
-        "priceINR": 500,
-        "priceUSD": 10,
-        "payLink": "",
-        "featured": false
-      },
-      {
-        "name": "Monthly — 1:1",
-        "detail": "4 × 45 min · personalised syllabus",
-        "priceINR": 4000,
-        "priceUSD": 60,
-        "payLink": "",
-        "featured": true
-      },
-      {
-        "name": "Group Batch",
-        "detail": "8 × 60 min · max 6 students",
-        "priceINR": 3000,
-        "priceUSD": 40,
-        "payLink": "",
-        "featured": false
-      }
-    ],
+    "plans": [],
     "steps": [
       "Choose a plan and pay securely online.",
       "You receive a confirmation email with your class schedule.",
@@ -112,66 +87,9 @@ window.SITE = {
       "After each class you get notes and a practice recording."
     ]
   },
-  "articles": [
-    {
-      "title": "Why riyaz in the morning changes everything",
-      "date": "2026-09-01",
-      "tag": "Practice",
-      "readTime": "4 min",
-      "excerpt": "A simple daily routine that transformed my voice — and how students can adapt it to a busy life.",
-      "body": [
-        "For years I practised whenever I found time. The breakthrough came when I made the first thirty minutes of every morning non-negotiable.",
-        "Start with long, steady notes. Don't chase speed. The voice wakes up slowly and rewards patience.",
-        "If mornings are impossible, pick the same time every day. Consistency matters more than the clock."
-      ]
-    },
-    {
-      "title": "Learning music online: what actually works",
-      "date": "2026-07-20",
-      "tag": "Teaching",
-      "readTime": "5 min",
-      "excerpt": "After teaching students across 12 countries over Zoom, here is what I've learned about online lessons.",
-      "body": [
-        "Good audio beats good video. A simple wired headset makes a bigger difference than any camera.",
-        "Recording every lesson lets students revisit the details they missed in the moment.",
-        "Most importantly: small weekly goals keep students motivated between classes."
-      ]
-    },
-    {
-      "title": "Behind the scenes of my first original composition",
-      "date": "2026-05-02",
-      "tag": "Journey",
-      "readTime": "3 min",
-      "excerpt": "How a monsoon evening became a melody — the story behind 'Monsoon'.",
-      "body": [
-        "It started with four notes hummed into my phone during a storm.",
-        "Over three months those notes became a full piece, arranged with violin and mridangam."
-      ]
-    }
-  ],
-  "testimonials": [
-    {
-      "quote": "Patient, precise and inspiring. My daughter looks forward to every class.",
-      "name": "Parent of a student",
-      "place": "London, UK"
-    },
-    {
-      "quote": "I had never sung before. Six months later I performed at our community festival.",
-      "name": "Adult beginner",
-      "place": "Toronto, Canada"
-    },
-    {
-      "quote": "A voice that stays with you long after the concert ends.",
-      "name": "Audience review",
-      "place": "Chennai"
-    }
-  ],
-  "featuredIn": [
-    "Radio Feature (replace)",
-    "Music Festival (replace)",
-    "Sabha Name (replace)",
-    "Collaboration (replace)"
-  ],
+  "articles": [],
+  "testimonials": [],
+  "featuredIn": [],
   "contactFormKey": "",
   "newsletter": {
     "enabled": true,
@@ -179,14 +97,7 @@ window.SITE = {
     "text": "Concert dates, new videos and class openings — straight to your inbox. No spam, unsubscribe anytime.",
     "provider": "email"
   },
-  "achievements": [
-    {
-      "year": "",
-      "title": "",
-      "detail": "",
-      "link": ""
-    }
-  ],
+  "achievements": [],
   "press": [],
   "pressHidden": [],
   "classVault": {
