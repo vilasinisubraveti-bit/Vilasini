@@ -231,5 +231,17 @@ window.SITE = {
     }
   ],
   "press": [],
-  "pressHidden": []
+  "pressHidden": [],
+  "classVault": {
+    "s": "q7hkPA0J6aMfapC9CiN3ag==",
+    "i": "Qyb2bwHisl5cmsFF",
+    "d": "np1AQI0d0GSfKxtYWIaP54O0RA37mZunGYH/UoK5A2J0Hda3UIoQVrCi2E/K4FCPY1GFkv/3pSKjxZELSodb+mfgcs/l+vstH0SOLkbyMZhia803Wx+Suj8Yhb5MLhNZGoFxWM38O5BHZ3oSW98lZA=="
+  },
+  "classPortal": {
+    "s": "FNirzvGkRWrjVqTt1WL47w==",
+    "i": "W26ghNzN2HsL+wmJ",
+    "d": "xTyIr0wrDMlF9qnBsuaPRPoeuEWVCtQsE0mVp9QvZzKVddAjtayhbwxwVNr8iiXP3r1c0hoP1z9Q2Q+g1th4R1co9Arhos6g8j+bLoQSydiY5jKcqiiLCvmjL+1foHCTqPtSrWyjOxTIvyJfFYZsglWhXlpru/zLceWHBpLmBoQJ93XFJp5HcwngRjgXWCcnPjARjrcEeN7SbJm0YBG/4vYRLQAZjU170AkEpZwcS2VjBjbC0KMJjF2F+QGd1klSWqtsMxqMJtchMe2NndubK8PiENTPQnyLLVV87dg+MrrC2+1w0NcdS63Vygz6W8Vr78u+Ql/k9qe79wAiXVd+USYjOxir5zPDdWH5YbLfLglbYksJGZH/Jy7AK323VXqT6sIfntpV8ApnTA=="
+  },
+  "classInvites": {},
+  "classStudents": {}
 };
