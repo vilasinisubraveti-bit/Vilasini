@@ -2,7 +2,7 @@ name: Update concerts from Google Calendar
 
 on:
   schedule:
-    - cron: "15 */3 * * *"   # every 3 hours
+    - cron: "*/10 * * * *"   # every 10 minutes (GitHub may start a few minutes late)
   workflow_dispatch:          # "Run workflow" button for an instant refresh
 
 permissions:

@@ -197,7 +197,8 @@
     const tIST = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true }).format(d);
     const groups = {}; occ.forEach((o) => (groups[dayKey(o.d)] ||= []).push(o));
     v.innerHTML = `<div class="row" style="justify-content:space-between"><p class="muted">Concerts 🎤, classes 🎓 and anything you added in Google Calendar 📅 — next 3 weeks (IST). Only you two see this. Concert times are shown to students as "Not available".</p>
-      <div class="row"><button class="b g" data-ics>⬇ All classes (.ics)</button><button class="b" data-new>+ Schedule a class</button></div></div>
+      <div class="row"><a class="b g" target="_blank" rel="noopener" href="https://github.com/${location.hostname.split(".")[0]}/${location.pathname.split("/").filter(Boolean)[0] || ""}/actions/workflows/private-calendar.yml" title="Google Calendar changes sync every ~10 minutes; open this and tap Run workflow to sync immediately">↻ Sync Google now</a>
+        <button class="b g" data-ics>⬇ All classes (.ics)</button><button class="b" data-new>+ Schedule a class</button></div></div>
       ${occ.length ? Object.entries(groups).map(([day, list]) => `<div class="card"><h3>${esc(day)}</h3>${list.map(({ s, c, d }) => c
           ? `<div class="row" style="justify-content:space-between;border-top:1px solid #efe6d8;padding-top:8px;background:#fbf1e6">
               <div><b>${c.allDay ? "All day" : esc(tIST(c.start)) + " – " + esc(tIST(c.end))}</b> · ${c.fromGoogle ? "📅" : "🎤"} <b>${esc(c.title)}</b><div class="muted">${c.fromGoogle ? "From your Google Classes calendar" : "Concert"}${c.where ? " · " + esc(c.where) : ""}</div></div></div>`
