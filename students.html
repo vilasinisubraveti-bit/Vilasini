@@ -161,6 +161,12 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
   slots.sort((x, y) => x.start - y.start);
 
   const upiLink = (amt, note) => `upi://pay?pa=${encodeURIComponent(info.upiId)}&pn=${encodeURIComponent(info.upiName || teacher)}&am=${encodeURIComponent(amt)}&cu=INR&tn=${encodeURIComponent(("Class fee " + (note || "")).slice(0, 50))}`;
+  // "Approve" link for the teacher: opens her Classes manager with this request filled in (works only on her signed-in devices)
+  const approveLink = (name, st, mins) => {
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify({ n: name || (me && me.studentName) || "", sid: (me && self && self.id) || "", t: st.toISOString(), d: +mins || 60 })))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    return new URL("./", location.href).href + "#approve=" + code;
+  };
+  const approveLine = (name, st, mins) => `\n\n✅ Teacher: tap to approve and schedule → ${approveLink(name, st, mins)}`;
   const contact = (text) => data.whatsapp ? `https://wa.me/${data.whatsapp}?text=${encodeURIComponent(text)}` : `mailto:${data.email}?subject=${encodeURIComponent("Class request")}&body=${encodeURIComponent(text)}`;
 
   app.innerHTML = `<header><div class="wrap">${data.photo ? `<img class="avatar" src="${esc(data.photo)}" alt="" onerror="this.remove()">` : ""}
@@ -188,7 +194,7 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
       ${mode === "portal" ? `<section style="display:grid;gap:12px"><h2>My availability</h2>
         ${slots.length ? `<div class="slots">${slots.map(({ a, start, end, taken, state }) => `<div class="slot" ${taken ? 'style="opacity:.6"' : state === "mine" ? 'style="border-color:#9c2f24"' : ""}><div><b>${esc(fmtDay(start))} ${esc(new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(start))}</b> · ${esc(fmtTime(start))} – ${esc(fmtTime(end))}
           <div class="meta">${esc(istHM(start))}–${esc(istT(end))} India time</div></div>
-          ${taken ? `<span class="meta" style="font-weight:600">Not available</span>` : state === "mine" ? `<span class="meta" style="font-weight:600;color:#9c2f24">Your class</span>` : `<a class="btn btn--ghost" href="${esc(contact(`Namaste! I'd like to book a class on ${fmtDay(start)} ${fmtTime(start)} (my time) / ${istHM(start)} IST.`))}" target="_blank" rel="noopener">Request this slot</a>`}</div>`).join("")}</div>`
+          ${taken ? `<span class="meta" style="font-weight:600">Not available</span>` : state === "mine" ? `<span class="meta" style="font-weight:600;color:#9c2f24">Your class</span>` : `<a class="btn btn--ghost" href="${esc(contact(`Namaste!${me ? " I'm " + me.studentName + "." : ""} I'd like to book a class on ${fmtDay(start)} ${fmtTime(start)} (my time) / ${istHM(start)} IST.` + approveLine("", start, Math.min(60, Math.round((end - start) / 6e4)))))}" target="_blank" rel="noopener" data-sent>Request this slot</a>`}</div>`).join("")}</div>`
           : `<div class="card"><p class="muted">Availability will be shared soon.</p></div>`}
         <div class="card"><h3>Request a class</h3>
           <form data-req><label>Your name<input name="n" required></label>
@@ -212,7 +218,12 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
     } catch { box.innerHTML = `<p class="muted">Couldn't load the QR code — pay to UPI ID <b>${esc(info.upiId)}</b>.</p>`; }
   });
   document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied ✓"; setTimeout(() => (b.textContent = "Copy"), 1500); } catch { prompt("Copy:", b.dataset.copy); } });
+  const sentNote = () => { if (document.querySelector("[data-sent-note]")) return; const n = document.createElement("div"); n.className = "note"; n.dataset.sentNote = "";
+    n.textContent = "Request sent ✓ — it's confirmed once your teacher approves it. The class will then appear under Upcoming classes with its join link.";
+    document.querySelector("main").prepend(n); n.scrollIntoView({ behavior: "smooth", block: "center" }); };
+  document.querySelectorAll("[data-sent]").forEach((a) => a.addEventListener("click", () => setTimeout(sentNote, 300)));
   const req = document.querySelector("[data-req]");
+  if (req && me) req.n.value = me.studentName || "";
   if (req) {
     const pad2 = (n) => String(n).padStart(2, "0");
     const tomorrow = new Date(Date.now() + 864e5);
@@ -232,8 +243,8 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
     req.onsubmit = (e) => { e.preventDefault(); const f = e.target, p = picked(); if (!p) return;
       if (clash(p)) { upd(); return; }
       const msg = `Namaste! I'm ${f.n.value}. I'd like to request a class:\n` +
-        `• ${localFull(p.st)} (my time, ${tz})\n• ${istFull(p.st)} India time\n• ${f.len.value} minutes` + (f.m.value.trim() ? `\n\n${f.m.value.trim()}` : "");
-      window.open(contact(msg), "_blank"); };
+        `• ${localFull(p.st)} (my time, ${tz})\n• ${istFull(p.st)} India time\n• ${f.len.value} minutes` + (f.m.value.trim() ? `\n\n${f.m.value.trim()}` : "") + approveLine(f.n.value.trim(), p.st, f.len.value);
+      window.open(contact(msg), "_blank"); sentNote(); };
   }
   document.title = `${teacher} · ${mode === "portal" ? "Student portal" : "Class invitation"}`;
 })();

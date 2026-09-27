@@ -90,7 +90,9 @@
   const clashes = (s) => CC.occurrences(s).flatMap((d) => { const e = d.getTime() + (+s.duration || 60) * 6e4;
     return [...concerts, ...gcal].filter((c) => c.start.getTime() < e && c.end.getTime() > d.getTime()).map((c) => ({ d, c })); });
 
-  window.__openClasses = async () => {
+  let pendingReq = null;   // a student's request opened from the "approve" link in WhatsApp / email
+  window.__openClasses = async (req) => {
+    pendingReq = req || null;
     const body = shell("Classes & student portal");
     body.innerHTML = `<p class="muted">Loading…</p>`;
     try { site = await O.readContent(); } catch (e) { body.innerHTML = `<p class="err">Could not load: ${esc(e.message)}</p>`; return; }
@@ -217,6 +219,7 @@
     $$("[data-t]", body).forEach((b) => { b.classList.toggle("on", b.dataset.t === tab); b.onclick = () => { tab = b.dataset.t; main(); }; });
     const v = $("[data-v]", body);
     ({ cal: viewCalendar, classes: viewClasses, students: viewStudents, pay: viewPayments, avail: viewAvailability, fees: viewFees, portal: viewPortal })[tab](v);
+    if (pendingReq) { const r = pendingReq; pendingReq = null; editForm(v, null, r); }
   }
 
   const gcalStamp = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -317,25 +320,36 @@
     });
   }
 
-  function editForm(v, s) {
-    const p = s ? istParts(s.start) : { date: new Date().toISOString().slice(0, 10), time: "18:00" };
-    v.innerHTML = `<form class="card"><h3>${s ? "Edit class" : "Schedule a class"}</h3>
-      <label>Class name<input name="title" required value="${esc(s?.title || "")}" placeholder="e.g. Beginners batch — Varnams"></label>
+  function editForm(v, s, req) {
+    // req = a student's request (from the approve link): prefill date/time, length, student and their usual class link
+    let pre = null;
+    if (!s && req && !isNaN(new Date(req.t))) {
+      const known = (vault.students || []).find((st) => st.id === req.sid) || (vault.students || []).find((st) => req.n && st.name.trim().toLowerCase() === req.n.trim().toLowerCase());
+      const last = known ? [...vault.sessions].filter((x) => x.studentId === known.id).sort((a, b) => b.start.localeCompare(a.start))[0] : null;
+      pre = { title: last ? last.title : `Class — ${known ? known.name : req.n || "student"}`, duration: +req.d || 60, audience: known ? "student" : "private", studentId: known?.id,
+        link: last?.link || "", meetingId: last?.meetingId || "", passcode: last?.passcode || "", fee: last?.fee ?? "" };
+      s = null; req.pre = pre; req.known = known;
+    }
+    const p = s ? istParts(s.start) : pre ? istParts(req.t) : { date: new Date().toISOString().slice(0, 10), time: "18:00" };
+    const d0 = s || pre;
+    v.innerHTML = `<form class="card"><h3>${s ? "Edit class" : pre ? "Approve request — " + esc(req.known ? req.known.name : req.n || "student") : "Schedule a class"}</h3>
+      ${pre ? `<p class="muted">Requested ${esc(fmtIST(new Date(req.t)))} IST · ${esc(pre.duration)} min${req.known ? "" : " · this name isn't in your Students list — add them there to give them their own page"}. Check the link and click Approve.</p>` : ""}
+      <label>Class name<input name="title" required value="${esc(d0?.title || "")}" placeholder="e.g. Beginners batch — Varnams"></label>
       <div class="g3"><label>Date<input name="date" type="date" required value="${esc(p.date)}"></label>
         <label>Start time (IST)<input name="time" type="time" required value="${esc(p.time)}"></label>
-        <label>Length (minutes)<input name="duration" type="number" min="15" step="5" value="${esc(s?.duration || 60)}"></label></div>
-      <div class="g2"><label>Repeat<select name="weeks">${[1, 2, 4, 8, 12, 24, 52].map((n) => `<option value="${n}" ${+(s?.weeks || 1) === n ? "selected" : ""}>${n === 1 ? "Just once" : `Every week × ${n}`}</option>`).join("")}</select></label>
+        <label>Length (minutes)<input name="duration" type="number" min="15" step="5" value="${esc(d0?.duration || 60)}"></label></div>
+      <div class="g2"><label>Repeat<select name="weeks">${[1, 2, 4, 8, 12, 24, 52].map((n) => `<option value="${n}" ${+(d0?.weeks || 1) === n ? "selected" : ""}>${n === 1 ? "Just once" : `Every week × ${n}`}</option>`).join("")}</select></label>
         <label>Who is this class for<select name="who">
-          ${(vault.students || []).map((st) => `<option value="student:${esc(st.id)}" ${s?.audience === "student" && s?.studentId === st.id ? "selected" : ""}>${esc(st.name)}</option>`).join("")}
-          <option value="all" ${s?.audience === "all" ? "selected" : ""}>All my students (group class)</option>
-          <option value="private" ${s && s.audience === "private" ? "selected" : ""}>Only people I send the class link to</option></select></label></div>
+          ${(vault.students || []).map((st) => `<option value="student:${esc(st.id)}" ${d0?.audience === "student" && d0?.studentId === st.id ? "selected" : ""}>${esc(st.name)}</option>`).join("")}
+          <option value="all" ${d0?.audience === "all" ? "selected" : ""}>All my students (group class)</option>
+          <option value="private" ${d0 && d0.audience === "private" ? "selected" : ""}>Only people I send the class link to</option></select></label></div>
         ${(vault.students || []).length ? "" : `<p class="muted">Tip: add students in the 👩‍🎓 Students tab to give each one a personal page.</p>`}
-      <label>Class link — Zoom, Teams, Google Meet or WhatsApp<input name="link" type="url" required value="${esc(s?.link || "")}" placeholder="https://meet.google.com/…  ·  https://teams.microsoft.com/…  ·  https://…zoom.us/j/…  ·  https://call.whatsapp.com/…"></label>
-      <div class="g2"><label>Meeting ID (optional)<input name="meetingId" value="${esc(s?.meetingId || "")}"></label>
-        <label>Passcode (optional)<input name="passcode" value="${esc(s?.passcode || "")}"></label></div>
-      <label>Fee for each class, ₹ (optional — for your accounts only; students don't see it)<input name="fee" type="number" min="0" value="${esc(s?.fee || "")}"></label>
-      <label>Notes for students (optional)<textarea name="notes" placeholder="e.g. Please keep your shruti box ready">${esc(s?.notes || "")}</textarea></label>
-      <div class="row"><button class="b">${s ? "Save changes" : "Create class"}</button><button type="button" class="b g" data-back>Cancel</button></div><p class="err" data-e></p></form>`;
+      <label>Class link — Zoom, Teams, Google Meet or WhatsApp<input name="link" type="url" required value="${esc(d0?.link || "")}" placeholder="https://meet.google.com/…  ·  https://teams.microsoft.com/…  ·  https://…zoom.us/j/…  ·  https://call.whatsapp.com/…"></label>
+      <div class="g2"><label>Meeting ID (optional)<input name="meetingId" value="${esc(d0?.meetingId || "")}"></label>
+        <label>Passcode (optional)<input name="passcode" value="${esc(d0?.passcode || "")}"></label></div>
+      <label>Fee for each class, ₹ (optional — for your accounts only; students don't see it)<input name="fee" type="number" min="0" value="${esc(d0?.fee || "")}"></label>
+      <label>Notes for students (optional)<textarea name="notes" placeholder="e.g. Please keep your shruti box ready">${esc(d0?.notes || "")}</textarea></label>
+      <div class="row"><button class="b">${s ? "Save changes" : pre ? "Approve & schedule" : "Create class"}</button><button type="button" class="b g" data-back>Cancel</button></div><p class="err" data-e></p></form>`;
     $("[data-back]", v).onclick = () => main();
     $("form", v).onsubmit = async (e) => {
       e.preventDefault(); const f = e.target;

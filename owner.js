@@ -347,13 +347,22 @@ window.SITE = ${JSON.stringify(data, null, 2)};
   async function readContent() { const f = await gh("content.js"); return new Function("window", b64decode(f.content) + "\n;return window.SITE;")({}); }
   window.__owner = { commit, readContent, msg, SITE_URL };
   const loadScript = (src) => new Promise((ok, fail) => { const t = document.createElement("script"); t.src = src + "?v=" + Date.now(); t.onload = ok; t.onerror = fail; document.body.appendChild(t); });
-  $("[data-classes-btn]", bar).onclick = async () => {
+  const openClasses = async (req) => {
     try {
       if (!window.ClassCrypto) await loadScript("classcrypto.js");
       if (!window.__openClasses) await loadScript("owner-classes.js");
-      window.__openClasses();
+      window.__openClasses(req);
     } catch { msg("Could not open classes — check your connection", "err"); }
   };
+  $("[data-classes-btn]", bar).onclick = () => openClasses();
+  // A student's class request arrives with an "approve" link (…/#approve=…) — open it straight into the Classes manager
+  const approveFromHash = () => {
+    const m = location.hash.match(/^#approve=([\w-]+)/); if (!m) return;
+    history.replaceState(null, "", location.pathname);
+    try { const r = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/"))))); openClasses(r); }
+    catch { msg("That approve link looks incomplete — open 🎓 Classes and schedule it by hand", "err", 8000); }
+  };
+  approveFromHash(); window.addEventListener("hashchange", approveFromHash);
 
   // While editing, links inside the page shouldn't navigate away
   document.addEventListener("click", (e) => {
