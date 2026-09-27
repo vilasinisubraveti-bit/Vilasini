@@ -310,3 +310,13 @@ a.achv:hover{transform:translateY(-3px);border-color:var(--accent)}
 /* Instagram concerts live inside the "Past" tab */
 #events:not(.is-past) [data-insta-wrap]{display:none}
 #events.is-past .insta{margin-top:28px}
+
+/* Past concerts with a picture (copied from Instagram) */
+.event--img{grid-template-columns:130px 80px 1fr auto}
+.event__pic{padding:0;border:0;background:none;cursor:pointer;width:130px;aspect-ratio:1;border-radius:12px;overflow:hidden}
+.event__pic img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.event__pic:hover img{transform:scale(1.05)}
+.honours{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
+.event[data-code]{position:relative}
+@media (max-width:700px){.event--img{grid-template-columns:64px 1fr}.event__pic{grid-column:1/-1;width:100%;aspect-ratio:16/10}}
+.event--past.event--img{opacity:1}

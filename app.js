@@ -108,21 +108,29 @@
     const idx = evs.indexOf(e);
     const where = [e.venue, e.city].filter(Boolean).join(", ");
     const when = e.time ? `${where ? " · " : ""}${e.time} IST` : "";
-    return `<article class="event ${isPast ? "event--past" : ""} reveal">
+    const more = e.description && e.description.length;
+    return `<article class="event ${isPast ? "event--past" : ""} ${e.image ? "event--img" : ""} reveal" ${e.code ? `data-code="${esc(e.code)}"` : ""}>
+      ${e.image ? `<button class="event__pic" data-event-more="${idx}" aria-label="Open"><img src="${esc(e.image)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></button>` : ""}
       <div class="event__date"><div class="event__day">${e.day}</div><div class="event__mon">${MON[e.m - 1]} ${e.y}</div></div>
       <div><span class="event__type">${esc(e.type || "Concert")}</span><h3>${esc(e.title)}</h3>
         <div class="event__where">${esc(where)}${when}</div>${e.note ? `<p class="muted" style="margin:6px 0 0">${esc(e.note)}</p>` : ""}</div>
       <div class="event__actions">${!isPast ? `<button class="btn btn--ghost btn--small" data-ics="${idx}">+ Calendar</button>` : ""}
-        ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}</div>
+        ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}
+        ${more ? `<button class="btn btn--ghost btn--small" data-event-more="${idx}">Read more</button>` : ""}</div>
     </article>`;
   };
-  let igConcerts = 0; // number of Instagram concert posts (shown inside the Past tab)
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-event-more]"); if (!b || document.body.classList.contains("is-editing")) return;
+    const e = evs[+b.dataset.eventMore]; if (!e) return;
+    const where = [e.venue, e.city].filter(Boolean).join(", ");
+    openModal(`<article class="reader"><p class="eyebrow">${esc([e.type || "Concert", `${e.day} ${MON[e.m - 1]} ${e.y}`, where].filter(Boolean).join(" · "))}</p>
+      <h2>${esc(e.title)}</h2>${e.image ? `<img src="${esc(e.image)}" alt="" style="width:100%;border-radius:12px;margin:10px 0 18px">` : ""}
+      ${(e.description || []).map((t) => `<p>${esc(t)}</p>`).join("")}</article>`);
+  });
   const renderEvents = () => {
     const list = activeTab === "past" ? past : upcoming;
-    $("#events").classList.toggle("is-past", activeTab === "past");
-    const pastBtn = $('[data-events-tab="past"]'); if (pastBtn) pastBtn.textContent = `Past${past.length + igConcerts ? ` (${past.length + igConcerts})` : ""}`;
+    const pastBtn = $('[data-events-tab="past"]'); if (pastBtn) pastBtn.textContent = `Past${past.length ? ` (${past.length})` : ""}`;
     $("[data-events]").innerHTML = list.length ? list.map((e) => eventHTML(e, activeTab === "past")).join("")
-      : (activeTab === "past" && igConcerts) ? ""
       : `<p class="empty">${activeTab === "past" ? "No past events yet." : "New dates announced soon — see past concerts in the Past tab."}</p>`;
     observe();
   };
@@ -150,12 +158,16 @@
   const showEvents = (list) => { buildEvents(list); renderEvents(); renderNextUp(); };
   const manualEvents = S.announcements || [];
   showEvents(manualEvents);
-  fetch("events.json", { cache: "no-cache" }).then((r) => r.ok ? r.json() : []).then((cal) => {
-    if (!Array.isArray(cal) || !cal.length) return;
+  const getJSON = (f) => fetch(f, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+  const igReady = getJSON("instagram.json");
+  Promise.all([getJSON("events.json"), igReady]).then(([cal, ig]) => {
     const key = (e) => `${e.date}|${String(e.title).trim().toLowerCase()}`;
     const seen = new Set(manualEvents.map(key));
-    showEvents([...manualEvents, ...cal.filter((e) => !seen.has(key(e)))]);
-  }).catch(() => {});
+    const calEv = (Array.isArray(cal) ? cal : []).filter((e) => !seen.has(key(e)));
+    const igEv = igItems(ig, "concert").map((x) => ({ type: "Concert", title: x.title, date: x.date, venue: x.venue || "", city: x.city || "",
+      note: x.description[0] && x.description[0].length < 160 ? x.description[0] : "", description: x.description, image: x.image, code: x.code }));
+    showEvents([...manualEvents, ...calEv, ...igEv]);
+  });
 
   // Add-to-calendar (.ics)
   document.addEventListener("click", (e) => {
@@ -172,49 +184,61 @@
     a.download = ev.title.replace(/[^\w]+/g, "-") + ".ics"; a.click();
   });
 
-  /* ---------- Instagram concert posts ----------
-     Links come from instagram-seed.json + content.js "instagramPosts" (added in the editor).
-     The posting date is read from the link itself, so posts sort newest first automatically. */
+  /* ---------- Instagram posts, copied onto the site (no links to Instagram) ----------
+     instagram.json is built by a GitHub Action (caption + photo). Anything typed in the editor
+     (content.js "instagramPosts": title, date, description, image, venue, city) wins over the copied text. */
   const IG_ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
   const igCode = (u) => (String(u).match(/instagram\.com\/(?:[\w.]+\/)?(?:p|reel|tv)\/([\w-]{8,})/) || [])[1];
   const igDate = (code) => { try { let n = 0n; for (const ch of code.slice(0, 11)) n = n * 64n + BigInt(IG_ABC.indexOf(ch)); return new Date(Number(n >> 23n) + 1314220021721); } catch { return null; } };
   window.__ig = { igCode, igDate };
-  const loadEmbedJs = () => { if (window.instgrm) return window.instgrm.Embeds.process();
-    if (document.querySelector("script[data-igjs]")) return; const t = document.createElement("script"); t.src = "https://www.instagram.com/embed.js"; t.async = true; t.dataset.igjs = "1"; document.body.appendChild(t); };
-  // type "concert" -> Concerts section · type "honour" (chief guest, awards…) -> Accomplishments
-  const renderInsta = (items, type, wrapSel, gridSel, moreSel) => {
+  // Caption -> { title: first line, paras: the rest as paragraphs }. Hashtags removed, @names kept as plain names.
+  function parseCaption(text) {
+    const lines = String(text || "").replace(/\r/g, "").replace(/\\n/g, "\n").split("\n")
+      .map((l) => l.replace(/(^|\s)#[\w\u0900-\u0DFF]+/g, "").replace(/@([\w.]+)/g, "$1").replace(/\s{2,}/g, " ").trim());
+    const idx = lines.findIndex((l) => /[\p{L}\p{N}]/u.test(l));
+    let title = idx >= 0 ? lines[idx] : "", restLines = idx >= 0 ? lines.slice(idx + 1) : [];
+    if (title.length > 90) { // long first line: cut at a sentence end (not after short abbreviations like "Sri.")
+      const m = title.match(/^(.{25,90}?\w{4,}[.!?])\s/);
+      const cut = m ? m[1] : title.slice(0, 80).replace(/\s+\S*$/, "") + "…";
+      restLines = [title.slice(m ? m[1].length : 0).trim() && m ? title.slice(m[1].length).trim() : (m ? "" : title), ...restLines];
+      title = cut.replace(/[.!]+$/, "");
+    }
+    const paras = []; let cur = [];
+    restLines.forEach((l) => { if (!l) { if (cur.length) { paras.push(cur.join(" ")); cur = []; } } else cur.push(l); });
+    if (cur.length) paras.push(cur.join(" "));
+    return { title: title.replace(/[.!]+$/, ""), paras: paras.filter((x) => /[\p{L}\p{N}]/u.test(x)) };
+  }
+  function igItems(list, type) {
+    const over = {}; (S.instagramPosts || []).forEach((x) => { const c = igCode(typeof x === "string" ? x : x?.url); if (c) over[c] = typeof x === "string" ? {} : x; });
     const hidden = new Set((S.instagramHidden || []).map(igCode));
-    const seen = new Set();
-    const posts = items.map((u) => (typeof u === "string" ? { url: u, type: "concert" } : u)).filter((x) => x && (x.type || "concert") === type)
-      .map((x) => igCode(x.url)).filter((c) => c && !hidden.has(c) && !seen.has(c) && seen.add(c))
-      .map((c) => ({ code: c, date: igDate(c) })).sort((a, b) => (b.date || 0) - (a.date || 0));
-    const wrap = $(wrapSel); wrap.hidden = !posts.length; if (type === "honour") refreshAcc();
-    if (type === "concert") { igConcerts = posts.length; renderEvents(); }
-    if (!posts.length) return;
-    let shown = 0; const PAGE = 6, grid = $(gridSel), more = $(moreSel);
-    const addPage = () => {
-      posts.slice(shown, shown + PAGE).forEach((p) => {
-        const url = `https://www.instagram.com/p/${p.code}/`;
-        const d = document.createElement("div"); d.className = "insta__item"; d.dataset.code = p.code;
-        d.innerHTML = `<div class="insta__date">${p.date ? p.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""}</div>
-          <blockquote class="instagram-media" data-instgrm-permalink="${url}?utm_source=ig_embed" data-instgrm-version="14" data-instgrm-captioned>
-          <a class="insta__fallback" href="${url}" target="_blank" rel="noopener">View on Instagram ↗</a></blockquote>`;
-        grid.appendChild(d);
-      });
-      shown += PAGE; more.hidden = shown >= posts.length; loadEmbedJs();
-    };
-    more.onclick = addPage;
-    if ("IntersectionObserver" in window) {
-      const io2 = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io2.disconnect(); addPage(); } }, { rootMargin: "400px" });
-      io2.observe(wrap);
-    } else addPage();
-  };
-  fetch("instagram-seed.json", { cache: "no-cache" }).then((r) => r.ok ? r.json() : []).catch(() => [])
-    .then((seed) => {
-      const all = [...(S.instagramPosts || []), ...(Array.isArray(seed) ? seed : [])];
-      renderInsta(all, "concert", "[data-insta-wrap]", "[data-insta]", "[data-insta-more]");
-      renderInsta(all, "honour", "[data-insta-honour-wrap]", "[data-insta-honour]", "[data-insta-honour-more]");
+    return (Array.isArray(list) ? list : []).filter((p) => p && p.code && !hidden.has(p.code) && ((over[p.code]?.type || p.type || "concert") === type))
+      .map((p) => {
+        const o = over[p.code] || {};
+        const typed = o.description && o.description.length ? (Array.isArray(o.description) ? o.description : String(o.description).split(/\n\s*\n/)) : null;
+        const cap = parseCaption(p.caption);
+        return { code: p.code, date: o.date || p.date || (igDate(p.code) || new Date()).toISOString().slice(0, 10),
+          title: o.title || cap.title || (type === "honour" ? "Chief guest" : "Concert"), description: typed || cap.paras,
+          image: o.image || p.image || "", venue: o.venue || "", city: o.city || "" };
+      }).sort((a, b) => b.date.localeCompare(a.date));
+  }
+  // Accomplishments = chief guest & honours
+  igReady.then((ig) => {
+    const hon = igItems(ig, "honour");
+    $("[data-acc-section]").hidden = !hon.length; const al = $("[data-acc-link]"); if (al) al.hidden = !hon.length;
+    $("[data-honours]").innerHTML = hon.map((x, i) => `<button class="award reveal" data-honour="${i}" data-code="${esc(x.code)}">
+      <div class="award__img"><span class="award__year">${esc(new Date(x.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }))}</span>
+        <span class="award__emblem">🎖️</span>${x.image ? `<img src="${esc(x.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>
+      <div class="award__body"><div class="award__title">${esc(x.title)}</div>
+        ${x.description[0] ? `<p class="award__ex">${esc(x.description[0].length > 150 ? x.description[0].slice(0, 147) + "…" : x.description[0])}</p>` : ""}
+        <span class="award__more">Read more →</span></div></button>`).join("");
+    observe();
+    document.addEventListener("click", (e) => {
+      const c = e.target.closest("[data-honour]"); if (!c || document.body.classList.contains("is-editing")) return;
+      const x = hon[+c.dataset.honour];
+      openModal(`<article class="reader award-full"><p class="eyebrow">Chief guest · ${esc(new Date(x.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }))}</p>
+        <h2>${esc(x.title)}</h2>${x.image ? `<img class="award-full__img" src="${esc(x.image)}" alt="">` : ""}${x.description.map((t) => `<p>${esc(t)}</p>`).join("")}</article>`);
     });
+  });
 
   /* ---------- classes (switch in content.js) ---------- */
   const C = S.classes || {};
@@ -278,8 +302,10 @@
   });
 
   /* ---------- accomplishments: awards (content.js) + press (press.json) ---------- */
-  const accSection = $("[data-acc-section]");
-  const refreshAcc = () => { accSection.hidden = $("[data-press-wrap]").hidden && $("[data-insta-honour-wrap]").hidden; observe(); };
+  const refreshAcc = () => {
+    const has = !$("[data-press-wrap]").hidden;
+    $("[data-press-section]").hidden = !has; const pl = $("[data-press-link]"); if (pl) pl.hidden = !has; observe();
+  };
   /* Awards: rich cards (photo, year, conferred by, full write-up, link, video) */
   const achv = (S.achievements || []).filter((x) => x && x.title)
     .sort((a, b) => String(b.date || b.year || "").localeCompare(String(a.date || a.year || "")));

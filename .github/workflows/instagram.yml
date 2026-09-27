@@ -1,0 +1,35 @@
+name: Copy Instagram posts to the site
+
+on:
+  push:
+    paths: ["content.js", "instagram-seed.json", "scripts/fetch-instagram.mjs"]
+  schedule:
+    - cron: "30 2 * * *"     # daily: retries any post whose text/photo is still missing
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/fetch-instagram.mjs
+      - name: Save changes
+        run: |
+          git config user.name "instagram-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add instagram.json assets/instagram
+          if ! git diff --cached --quiet; then
+            git commit -m "Copy Instagram posts to the site"
+            git pull --rebase
+            git push
+          fi

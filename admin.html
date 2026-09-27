@@ -168,8 +168,15 @@ textarea{min-height:90px;resize:vertical}
       T("quote", "Short quote to show (optional)", { type: "textarea" }),
       T("image", "Picture link (optional)", { help: "Leave empty to use the article's own picture." }) ] },
       list2: { path: "pressHidden", add: "Hide a link", label: "Hide these links (e.g. a found article that is not about her)", string: true } },
-    { title: "Instagram posts", hint: "Concert posts & chief-guest/honour posts", list: { path: "instagramPosts", add: "Add Instagram post", newFirst: true, title: (x) => `${x.type === "honour" ? "Honour" : "Concert"} · ${x.url || ""}`, item: [
-      T("url", "Instagram post link"), T("type", "Show under", { type: "select", options: ["concert", "honour"], help: "concert = Concerts section · honour = Accomplishments (chief guest, awards)" }) ] },
+    { title: "Instagram posts", hint: "Past concerts & chief-guest posts — picture and write-up are copied from Instagram automatically", list: { path: "instagramPosts", add: "Add Instagram post", newFirst: true,
+      title: (x) => `${x.type === "honour" ? "Chief guest" : "Concert"} · ${x.title || x.url || ""}`, item: [
+      T("url", "Instagram post link"),
+      T("type", "Show under", { type: "select", options: ["concert", "honour"], help: "concert = Concerts → Past · honour = Accomplishments (chief guest)" }),
+      T("title", "Title (optional)", { help: "Leave empty to use the first line of the Instagram caption." }),
+      T("date", "Date (optional)", { type: "date", help: "Leave empty to use the date it was posted." }),
+      T("venue", "Venue (optional)"), T("city", "City (optional)"),
+      T("description", "Write-up (optional)", { type: "paragraphs", help: "Leave empty to use the Instagram caption. Blank line = new paragraph." }),
+      T("image", "Picture (optional)", { type: "image", folder: "assets/instagram", help: "Leave empty to use the Instagram photo." }) ] },
       list2: { path: "instagramHidden", add: "Hide a post", label: "Hidden posts (links)", string: true } },
     { title: "What people say", hint: "Testimonials", list: { path: "testimonials", add: "Add testimonial", title: (x) => x.name, item: [
       T("quote", "Quote", { type: "textarea" }), T("name", "Name"), T("place", "Place") ] } },

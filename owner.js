@@ -119,10 +119,10 @@ window.SITE = ${JSON.stringify(data, null, 2)};
     const panel = document.createElement("form"); panel.className = "owner-panel";
     panel.innerHTML = `<b>📸 Add an Instagram post</b>
       <input name="url" type="url" required placeholder="Paste the Instagram post link">
-      <select name="type" style="flex:0 1 230px"><option value="concert">Concert (shows here)</option><option value="honour">Chief guest / honour (Accomplishments)</option></select>
+      <select name="type" style="flex:0 1 250px"><option value="concert">Concert (Concerts → Past)</option><option value="honour">Chief guest / honour (Accomplishments)</option></select>
       <button class="owner-btn">Add</button>
-      <p class="owner-hint">The date is read from the link, so posts sort newest first automatically.</p>`;
-    $("[data-insta-wrap]") ? $("[data-insta-wrap]").before(panel) : host.appendChild(panel);
+      <p class="owner-hint">The photo and write-up are copied from the post onto the site within a few minutes, sorted by date. To change the wording or picture, use All settings → Instagram posts.</p>`;
+    host.appendChild(panel);
     panel.onsubmit = async (e) => {
       e.preventDefault();
       const code = window.__ig?.igCode(panel.url.value);
@@ -135,18 +135,18 @@ window.SITE = ${JSON.stringify(data, null, 2)};
           d.instagramPosts.unshift({ url, type });
           d.instagramHidden = (d.instagramHidden || []).filter((x) => window.__ig.igCode(x) !== code);
         });
-        panel.reset(); msg(`Added ✓ — shows under ${type === "honour" ? "Accomplishments" : "Concerts"} in about a minute`, "ok", 8000);
+        panel.reset(); msg(`Added ✓ — picture & write-up appear under ${type === "honour" ? "Accomplishments" : "Concerts → Past"} in 2–5 minutes`, "ok", 9000);
       } catch (err) { msg("Could not add: " + err.message, "err", 10000); }
       finally { $$("button,input,select", panel).forEach((x) => (x.disabled = false)); }
     };
-    const wireRemove = () => $$(".insta__item").forEach((item) => addRemove(item, async () => {
+    const wireRemove = () => $$("#events .event[data-code], [data-honours] [data-code]").forEach((item) => addRemove(item, async () => {
       const code = item.dataset.code;
       await commit("Remove Instagram post", (d) => {
         d.instagramPosts = (d.instagramPosts || []).filter((x) => window.__ig.igCode(typeof x === "string" ? x : x.url) !== code);
         d.instagramHidden = [...new Set([...(d.instagramHidden || []), `https://www.instagram.com/p/${code}/`])];
       });
     }));
-    wireRemove(); setTimeout(wireRemove, 1500);
+    wireRemove(); setTimeout(wireRemove, 1500); setTimeout(wireRemove, 4000);
   }
 
   /* ---------- Social links & address (owner only) ---------- */
@@ -211,7 +211,7 @@ window.SITE = ${JSON.stringify(data, null, 2)};
   /* ---------- Accomplishments: add link / newspaper photo / award, remove items ---------- */
   const today = () => new Date().toISOString().slice(0, 10);
   function decorateAccomplishments() {
-    const sec = $("[data-acc-section]"); sec.hidden = false;
+    const sec = $("[data-press-section]"); sec.hidden = false;
     $("[data-press-wrap]").hidden = false;
     // remove buttons
     $$("[data-achievements] .award").forEach((card) => addRemove(card, async () => {
