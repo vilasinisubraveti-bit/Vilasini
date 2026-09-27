@@ -1,7 +1,6 @@
 /* =====================================================================
    CONTENT.JS — all website text lives here.
-   Easiest way to edit: open the website on your signed-in device and tap "Edit page",
-   or use https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
+   Easiest way to edit: open  https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
    ===================================================================== */
 
 window.SITE = {
@@ -35,7 +34,7 @@ window.SITE = {
     "instagram": "https://www.instagram.com/yourhandle",
     "spotify": "",
     "facebook": "",
-    "whatsapp": "919876543210",
+    "whatsapp": "+918825878188",
     "email": "vilasinisubraveti@gmail.com"
   },
   "youtubeChannelId": "@Vilzbuzz",
@@ -249,5 +248,165 @@ window.SITE = {
       "i": "DIYnI8oODSnxRyh4",
       "d": "nZi9Sqnh/nz6GRugLXk04TnWuIjZwd+/f1vqzJhY0v4jzYGr/OgRusfFZukwCsuTGD2EhUMP55GQcCy8PolzDf3cNn29FKen4c749U6NynJkke+SKosG0MAGqPkA9o5dQrb3awrd72ULdr1FNGIYPDN+d17/1qZI7alBVjX6Ewt2+AVf2IC77y7ILwvuClXvtlmZFVrslJcRFQ58UjcAwRy7ObE3awYvyusv2PaJ/GNIciHjq9d05kGcFGYoCzzy8RICAQcVjeAocVaTHs8phS9llkubgX4FCAAqfGKxfuXRxNbCe5h+VLSYceKT3U1IryWqwqC/rJiJui6lig0j6G90Ra57ZH4kEbf4jKPLPMuDHNvsANJ62okERxMajMpW5PV39oIv1o8BUm+/T+PGWuk7+Ik9M20skU7jgMf2pLZ35X8teSXopTwNivQjtAx1hkNOBDoUJyhdP8c91X5LoH0ufBPtVAgKFw1w6iwPfiqhVpQM08w/e/MUdozrH0TIOEgJ5MGX5EEh6XsexjGpmI8aM9oQ6V62t9M+/xM2hQ7cLBb4kJwpW7jBfKYOckxCVzJRsvCme43L8g5Mcs5jH9NctkteWLrvfBTsht2Cqpc="
     }
-  }
+  },
+  "instagramPosts": [
+    {
+      "url": "https://www.instagram.com/p/DdIU65YE4Qj/",
+      "type": "concert",
+      "title": "Karpagam Gardens Sat Sangh — Gokulashtami & Vinayaka Chaturthi festival",
+      "date": "2026-09-11",
+      "time": "19:00",
+      "endTime": "20:30",
+      "venue": "Karpaga Vinayakar Temple",
+      "address": "2nd Link Street, Karpagam Gardens, Adyar",
+      "violin": "Arya Nagarajan",
+      "mridangam": "S. Kavichelvan",
+      "ghatam": "",
+      "others": "",
+      "description": [
+        "A concert for Karpagam Garden Sat Sangh's 15th year Sri Gokulashtami and 40th year Vinayaka Chaturthi festival series, featuring rarely heard compositions of Oothukkadu Sri Venkatakavi."
+      ],
+      "image": "assets/instagram/DdIU65YE4Qj.jpg"
+    },
+    {
+      "url": "https://www.instagram.com/p/DcUuIjHAZeU/",
+      "type": "concert",
+      "title": "Thyagaraja Vidwath Samajam",
+      "date": "2026-08-22",
+      "time": "18:30",
+      "endTime": "20:30",
+      "venue": "Thyagaraja Vidwath Samajam",
+      "address": "",
+      "violin": "Anuthama Murali",
+      "mridangam": "D.V. Sivaraman",
+      "ghatam": "",
+      "others": "",
+      "description": [],
+      "image": "assets/instagram/DcUuIjHAZeU.jpg"
+    },
+    {
+      "url": "https://www.instagram.com/p/DcCtu-OAT4y/",
+      "type": "concert",
+      "title": "Independence Day Special Concert — Korattur Cultural Academy",
+      "date": "2026-08-15",
+      "time": "18:30",
+      "endTime": "20:30",
+      "venue": "KCA Hall",
+      "address": "No. 824, 32nd Street, TNHB Colony, Korattur",
+      "violin": "Gyandev Pappu",
+      "mridangam": "Ajeet Sridhar",
+      "ghatam": "",
+      "others": "",
+      "description": [],
+      "image": "assets/instagram/DcCtu-OAT4y.jpg"
+    },
+    {
+      "url": "https://www.instagram.com/p/DbJ8hFDDw8G/",
+      "type": "concert",
+      "title": "Nadhadweepam Trust",
+      "date": "2026-07-24",
+      "time": "17:15",
+      "endTime": "",
+      "venue": "Nadhadweepam Trust",
+      "address": "Srirangam",
+      "violin": "Sangeetha Priya",
+      "mridangam": "Punnur Arvind Kaushik",
+      "ghatam": "",
+      "others": "",
+      "description": [],
+      "image": "assets/instagram/DbJ8hFDDw8G.jpg"
+    },
+    {
+      "url": "https://www.instagram.com/p/DXcWAwTn98w/",
+      "type": "honour",
+      "title": "Chief Guest — Salangai Poojai of Vedavalli and Keerthana",
+      "date": "2026-04-22",
+      "time": "",
+      "endTime": "",
+      "venue": "",
+      "address": "",
+      "violin": "",
+      "mridangam": "",
+      "ghatam": "",
+      "others": "",
+      "description": [
+        "It was truly an honour to preside as the Chief Guest for the Salangai Poojai of two incredibly talented dancers, Vedavalli and Keerthana. As disciples of Smt. Sudhalakshmi, their performance was a testament to rigorous training and artistic devotion.",
+        "The evening's crowning achievement was the presentation of the Chatuslokhi — four profound verses dedicated to Goddess Mahalakshmi by the revered Saint Alavandar. The verses were elevated by the soulful and evocative musical score composed by T. Kishore.",
+        "Smt. Sudhalakshmi's direction was nothing short of exemplary. She managed a rare feat of translating complex spiritual philosophy into a visual language that was both accessible and deeply moving.",
+        "It was a memorable celebration of tradition, talent and the divine."
+      ],
+      "image": "assets/instagram/DXcWAwTn98w.webp"
+    },
+    {
+      "url": "https://www.instagram.com/p/DXGdWm6lGrG/",
+      "type": "concert",
+      "title": "Sadguru Sath Sangam — 24th Sri Ramanavami Sangeetha Mahotsavam",
+      "date": "2026-04-14",
+      "time": "19:00",
+      "endTime": "",
+      "venue": "Sri Sowmya Damodara Perumal Temple",
+      "address": "Villivakkam",
+      "violin": "Villivakkam S. Raghuraman",
+      "mridangam": "Neyveli K. Ramkumar",
+      "ghatam": "Aranala Sabarish",
+      "others": "",
+      "description": [],
+      "image": "assets/instagram/DXGdWm6lGrG.webp"
+    },
+    {
+      "url": "https://www.instagram.com/p/DWC_smVgX_v/",
+      "type": "concert",
+      "title": "Ugadi Special — Purandaradasar & Annamacharya Compositions",
+      "date": "2026-03-19",
+      "time": "18:15",
+      "endTime": "",
+      "venue": "Sri Ranga Hall, Kaligi Ranganathan Montford School",
+      "address": "Patel Road, Perambur, Chennai 600011",
+      "violin": "Madurai T. Kishore",
+      "mridangam": "Sriram Srinivasan",
+      "ghatam": "",
+      "others": "",
+      "description": [
+        "A Grand Carnatic Vocal Concert for Perambur Sangeetha Sabha on Ugadi, featuring an exclusive selection of Purandaradasar and Annamacharya kritis."
+      ],
+      "image": "assets/instagram/DWC_smVgX_v.jpg"
+    },
+    {
+      "url": "https://www.instagram.com/p/DRBbVjLAXGK/",
+      "type": "concert",
+      "title": "JB Cultural Foundation — Compositions on Thillai Natarajar",
+      "date": "2025-11-14",
+      "time": "18:15",
+      "endTime": "",
+      "venue": "Ragasudha Hall",
+      "address": "Luz, Mylapore (behind Nageswara Rao Park)",
+      "violin": "Mukunthan Samraj",
+      "mridangam": "J.P. Suriya Nambisan",
+      "ghatam": "",
+      "others": "",
+      "description": [
+        "The third concert of her Thematic November series, dedicated to compositions on Thillai Natarajar."
+      ],
+      "image": "assets/instagram/DRBbVjLAXGK.jpg"
+    },
+    {
+      "url": "https://www.instagram.com/p/DQwYJ3MgSim/",
+      "type": "concert",
+      "title": "A Thematic November",
+      "date": "2025-11-07",
+      "time": "",
+      "endTime": "",
+      "venue": "",
+      "address": "",
+      "violin": "",
+      "mridangam": "",
+      "ghatam": "",
+      "others": "",
+      "description": [
+        "Thematic concerts make a musician explore their repertoire and learn new kritis — three thematic concerts this November."
+      ],
+      "image": "assets/instagram/DQwYJ3MgSim.jpg"
+    }
+  ],
+  "instagramHidden": []
 };
