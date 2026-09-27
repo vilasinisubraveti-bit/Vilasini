@@ -126,7 +126,8 @@
     const pub = (s) => ({ id: s.id, title: s.title, start: s.start, duration: s.duration, weeks: s.weeks, link: s.link, platform: CC.platformOf(s.link), meetingId: s.meetingId, passcode: s.passcode, notes: s.notes });
     const pay = vault.payment || {};
     vault.students ||= [];
-    const base = { teacher: A.name || "", photo: A.photo || "", whatsapp: soc.whatsapp || "", email: soc.email || "", note: vault.note || "",
+    // WhatsApp for students comes from the PRIVATE number in Fees & payment (never published on the public site)
+    const base = { teacher: A.name || "", photo: A.photo || "", whatsapp: (vault.payment && vault.payment.whatsapp) || "", email: soc.email || "", note: vault.note || "",
       intro: vault.intro || "", plans: (vault.plans || []).filter((p) => p.name), upiId: pay.upiId || "", upiName: pay.upiName || A.name || "", payNote: pay.note || "", bank: Object.fromEntries(Object.entries(pay.bank || {}).filter(([, v]) => v)),
       availability: vault.availability || [], updated: new Date().toISOString() };
     // "Not available" blocks: every class that isn't a whole-group class, next 120 days — times only, no names or links
@@ -429,6 +430,9 @@
           <div class="g2"><label>Your UPI ID<input data-upi placeholder="e.g. vilasini@okicici" value="${esc(vault.payment.upiId || "")}"></label>
             <label>Name shown to students<input data-upiname value="${esc(vault.payment.upiName || "")}" placeholder="S.M. Vilasini"></label></div>
           <label>Payment note (optional)<input data-paynote value="${esc(vault.payment.note || "")}" placeholder="e.g. Please WhatsApp the payment screenshot to confirm your slot"></label></div>
+        <div class="card"><h3>WhatsApp for your students (private)</h3>
+          <p class="muted">Used for "Request this slot" and "Send on WhatsApp" on students' pages. Only invited students see it — it is not shown on the public website.</p>
+          <label>WhatsApp number (country code + number, no + or spaces)<input data-wa value="${esc(vault.payment.whatsapp || "")}" placeholder="91XXXXXXXXXX" autocomplete="off"></label></div>
         <div class="card"><h3>Bank transfer details (optional)</h3>
           <p class="muted">Shown only to your invited students, with copy buttons. Leave empty to hide.</p>
           <div class="g2"><label>Account holder name<input data-bk="holder" value="${esc(vault.payment.bank?.holder || "")}"></label>
@@ -455,7 +459,8 @@
         vault.plans = rows.filter((r) => r.name.trim());
         vault.intro = $("[data-intro]", v).value.trim();
         const bank = Object.fromEntries($$("[data-bk]", v).map((i) => [i.dataset.bk, i.value.trim()]));
-        vault.payment = { upiId: $("[data-upi]", v).value.trim(), upiName: $("[data-upiname]", v).value.trim(), note: $("[data-paynote]", v).value.trim(), bank };
+        vault.payment = { upiId: $("[data-upi]", v).value.trim(), upiName: $("[data-upiname]", v).value.trim(), note: $("[data-paynote]", v).value.trim(), bank,
+          whatsapp: $("[data-wa]", v).value.replace(/\D/g, "") };
         e.target.disabled = true; await save("Update class fees"); e.target.disabled = false;
       };
     };
