@@ -23,6 +23,7 @@ jobs:
       - run: node scripts/fetch-calendar.mjs
         env:
           GOOGLE_CALENDAR_ICS: ${{ secrets.GOOGLE_CALENDAR_ICS }}
+          CALENDAR_ALL_EVENTS: ${{ vars.CALENDAR_ALL_EVENTS }}
       - name: Save changes
         run: |
           git config user.name "calendar-bot"

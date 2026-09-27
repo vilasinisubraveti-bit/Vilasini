@@ -4,6 +4,8 @@
 //
 // How she writes events in Google Calendar:
 //   Title:       "Concert: Margazhi Recital"  (prefix sets the label; no prefix = Concert)
+//                On her main Gmail calendar the prefix (or "#website") is REQUIRED,
+//                otherwise the event is treated as personal and ignored.
 //   Location:    "Narada Gana Sabha, Chennai" (last part after a comma = city)
 //   Description: any text is shown as a note; the first link becomes a button
 //                ("Tickets: https://..." -> "Get tickets" button)
@@ -11,6 +13,14 @@ import fs from "node:fs";
 
 const url = (process.env.GOOGLE_CALENDAR_ICS || "").trim();
 if (!url) { console.log("GOOGLE_CALENDAR_ICS secret not set — skipping."); process.exit(0); }
+
+// Her main Gmail calendar also holds personal events, so from it we only take events
+// whose title starts with a tag like "Concert:" or contains "#website".
+// (A separate "Concerts" calendar shares everything.)
+const decodedUrl = decodeURIComponent(url);
+const ONLY_TAGGED = process.env.CALENDAR_ALL_EVENTS === "true" ? false
+  : (/@gmail\.com|@googlemail\.com/i.test(decodedUrl) || process.env.CALENDAR_ONLY_TAGGED === "true");
+console.log(ONLY_TAGGED ? "Main Gmail calendar: using only tagged events (e.g. 'Concert: ...' or '#website')." : "Dedicated calendar: using all events.");
 
 const res = await fetch(url.replace(/^webcal:/, "https:"));
 if (!res.ok) { console.error("Calendar download failed:", res.status); process.exit(1); }
@@ -57,12 +67,14 @@ for (const [, block] of raw.matchAll(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/g)) {
   const start = parseStart(get("DTSTART"));
   if (!start) continue;
 
-  let title = val("SUMMARY").trim(), type = "Concert";
+  let title = val("SUMMARY").trim(), type = "Concert", tagged = false;
+  if (/#website\b/i.test(title)) { tagged = true; title = title.replace(/#website\b/ig, "").trim(); }
   const pre = title.match(/^\[?([A-Za-z ]{3,20})\]?\s*[:\-–|]\s*(.+)$/);
   if (pre) {
     const t = TYPES.find((x) => x.toLowerCase() === pre[1].trim().toLowerCase());
-    if (t) { type = t; title = pre[2].trim(); }
+    if (t) { type = t; title = pre[2].trim(); tagged = true; }
   }
+  if (ONLY_TAGGED && !tagged) continue;                                     // personal events stay private
 
   const loc = val("LOCATION").split(",").map((s) => s.trim()).filter(Boolean);
   const city = loc.length > 1 ? loc[loc.length - 1] : "";
