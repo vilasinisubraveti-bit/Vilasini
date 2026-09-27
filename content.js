@@ -90,7 +90,7 @@ window.SITE = {
   "articles": [],
   "testimonials": [],
   "featuredIn": [],
-  "contactFormKey": "",
+  "contactFormKey": "dc9577fa-8cdf-4448-b6fc-84aa8c0f303e",
   "newsletter": {
     "enabled": true,
     "heading": "Stay in tune",
