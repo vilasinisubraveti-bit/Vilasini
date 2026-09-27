@@ -154,7 +154,7 @@ textarea{min-height:90px;resize:vertical}
       T("title", "Title"), T("date", "Date", { type: "date" }), T("tag", "Tag", { help: "e.g. Practice" }), T("readTime", "Read time", { help: "e.g. 4 min" }),
       T("excerpt", "Short summary", { type: "textarea" }), T("body", "Full article", { type: "paragraphs", help: "Leave a blank line between paragraphs." }),
       T("url", "OR link to an article elsewhere (Medium, Substack…)") ] } },
-    { title: "Press & reviews", hint: "Paste article links — headline & picture are found automatically", list: { path: "press", add: "Add article link", title: (x) => x.title || x.url, newFirst: true, item: [
+    { title: "Press & reviews", hint: "Paste article links — headline & picture are found automatically", bulk: true, list: { path: "press", add: "Add article link", title: (x) => x.title || x.url, newFirst: true, item: [
       T("url", "Article link", { help: "Paste the full web address of the review or article." }),
       T("title", "Headline (optional)", { help: "Leave empty to use the article's own headline." }),
       T("source", "Publication (optional)", { help: "e.g. The Hindu" }), T("date", "Date (optional)", { type: "date" }),
@@ -289,6 +289,24 @@ textarea{min-height:90px;resize:vertical}
     return wrap;
   }
 
+  function bulkEl() {
+    const box = document.createElement("div"); box.className = "item";
+    box.innerHTML = `<b>Add many links at once</b><p class="help" style="margin:0">Paste one link per line (from The Hindu, Mylapore Times, blogs…), then tap Add. Duplicates are skipped.</p>`;
+    const ta = document.createElement("textarea"); ta.placeholder = "https://www.thehindu.com/...\nhttps://www.mylaporetimes.com/...";
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn btn--sm"; btn.textContent = "Add links"; btn.style.justifySelf = "start";
+    btn.onclick = () => {
+      const list = Array.isArray(data.press) ? data.press : (data.press = []);
+      const have = new Set(list.map((p) => (typeof p === "string" ? p : p.url)));
+      const urls = (ta.value.match(/https?:\/\/[^\s<>"']+/g) || []).map((u) => u.replace(/[),.;]+$/, ""));
+      let added = 0;
+      urls.forEach((u) => { if (!have.has(u)) { have.add(u); list.unshift({ url: u, title: "", source: "", date: "", quote: "", image: "" }); added++; } });
+      ta.value = ""; if (added) { markDirty(); render(); }
+      status(added ? `${added} link(s) added — tap Save changes. Headlines & pictures appear on the site a few minutes after saving.` : "No new links found.", added ? "ok" : "", 7000);
+      const card = [...document.querySelectorAll(".card")].find((c) => c.querySelector("h2")?.textContent === "Press & reviews"); if (card) card.open = true;
+    };
+    box.append(ta, btn); return box;
+  }
+
   function render() {
     const form = $("[data-form]"); form.innerHTML = "";
     SECTIONS.forEach((s) => {
@@ -297,6 +315,7 @@ textarea{min-height:90px;resize:vertical}
       card.querySelector("h2").textContent = s.title; card.querySelector(".hint").textContent = s.hint || "";
       const body = document.createElement("div"); body.className = "body";
       (s.fields || []).forEach((f) => body.append(f.type === "photo" ? photoEl() : fieldEl(f, data, markDirty)));
+      if (s.bulk) body.append(bulkEl());
       if (s.list) body.append(listEl(s.list));
       if (s.list2) body.append(listEl(s.list2));
       card.append(body); form.append(card);
