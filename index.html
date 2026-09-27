@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Music · Performances, Videos & Online Classes</title>
+  <meta name="description" content="Official website — music videos, upcoming concerts, articles and live online music classes for students worldwide.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Music · Performances & Online Classes">
+  <meta property="og:description" content="Watch performances, see upcoming concerts and learn music online.">
+  <meta property="og:image" content="assets/portrait.jpg">
+  <meta name="theme-color" content="#14110f">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav" id="top">
+    <div class="wrap nav__inner">
+      <a href="#top" class="brand" data-bind="name">Artist</a>
+      <button class="nav__toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+      <nav class="nav__links" aria-label="Main">
+        <a href="#music">Music</a>
+        <a href="#events">Concerts</a>
+        <a href="#classes" data-classes-link hidden>Classes</a>
+        <a href="#articles">Articles</a>
+        <a href="#about">About</a>
+        <a href="#contact" class="btn btn--small">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero__bg" aria-hidden="true">
+        <svg class="wave" viewBox="0 0 1200 300" preserveAspectRatio="none"><path d="M0 150 Q 75 60 150 150 T 300 150 T 450 150 T 600 150 T 750 150 T 900 150 T 1050 150 T 1200 150"/><path d="M0 170 Q 100 90 200 170 T 400 170 T 600 170 T 800 170 T 1000 170 T 1200 170"/><path d="M0 130 Q 60 200 120 130 T 240 130 T 360 130 T 480 130 T 600 130 T 720 130 T 840 130 T 960 130 T 1080 130 T 1200 130"/></svg>
+      </div>
+      <div class="wrap hero__grid">
+        <div class="hero__text reveal">
+          <p class="eyebrow" data-bind="tagline"></p>
+          <h1 class="hero__name" data-bind="name"></h1>
+          <p class="hero__line" data-bind="heroLine"></p>
+          <div class="hero__cta">
+            <a href="#music" class="btn">Watch &amp; listen</a>
+            <a href="#classes" class="btn btn--ghost" data-classes-cta hidden>Learn with me</a>
+            <a href="#contact" class="btn btn--ghost" data-contact-cta>Get in touch</a>
+          </div>
+          <ul class="hero__social" data-social></ul>
+        </div>
+        <div class="hero__media reveal" data-featured></div>
+      </div>
+      <div class="wrap stats reveal" data-stats></div>
+    </section>
+
+    <!-- NEXT UP BANNER -->
+    <section class="nextup" data-nextup hidden></section>
+
+    <!-- MUSIC -->
+    <section class="section" id="music">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <p class="eyebrow">Music</p>
+          <h2>Performances &amp; videos</h2>
+          <a class="link-arrow" data-youtube-link target="_blank" rel="noopener">Subscribe on YouTube →</a>
+        </div>
+        <div class="filters reveal" role="tablist" data-filters></div>
+        <div class="video-grid" data-videos></div>
+      </div>
+    </section>
+
+    <!-- EVENTS -->
+    <section class="section section--alt" id="events">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <p class="eyebrow">On stage &amp; online</p>
+          <h2>Concerts &amp; announcements</h2>
+        </div>
+        <div class="tabs reveal">
+          <button class="tab is-active" data-events-tab="upcoming">Upcoming</button>
+          <button class="tab" data-events-tab="past">Past</button>
+        </div>
+        <div class="events" data-events></div>
+      </div>
+    </section>
+
+    <!-- CLASSES (hidden until enabled in content.js) -->
+    <section class="section" id="classes" data-classes hidden>
+      <div class="wrap">
+        <div class="section__head reveal">
+          <p class="eyebrow">Learn online</p>
+          <h2>Live classes on <span data-bind="platform">Zoom</span></h2>
+          <p class="section__intro" data-bind="classIntro"></p>
+        </div>
+        <div data-classes-body></div>
+      </div>
+    </section>
+
+    <!-- ARTICLES -->
+    <section class="section section--alt" id="articles">
+      <div class="wrap">
+        <div class="section__head reveal">
+          <p class="eyebrow">Writing</p>
+          <h2>Articles &amp; thoughts</h2>
+        </div>
+        <div class="articles" data-articles></div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section" id="about">
+      <div class="wrap about">
+        <div class="about__photo reveal" data-photo></div>
+        <div class="about__text reveal">
+          <p class="eyebrow">About</p>
+          <h2 data-bind="name"></h2>
+          <p class="muted" data-bind="location"></p>
+          <div data-bio></div>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="quotes" data-quotes></div>
+        <div class="featured-in reveal" data-featured-in></div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="section section--alt" id="contact">
+      <div class="wrap contact">
+        <div class="contact__info reveal">
+          <p class="eyebrow">Contact</p>
+          <h2>Let's make music together</h2>
+          <p class="muted">Concert bookings, collaborations, media, or joining a class — send a note and I'll reply personally.</p>
+          <div class="contact__quick" data-quick></div>
+        </div>
+        <form class="form reveal" data-form novalidate>
+          <div class="form__row">
+            <label>Name<input name="name" required autocomplete="name"></label>
+            <label>Email<input name="email" type="email" required autocomplete="email"></label>
+          </div>
+          <div class="form__row">
+            <label>Country<input name="country" autocomplete="country-name"></label>
+            <label>I'm interested in
+              <select name="interest">
+                <option>Online classes</option>
+                <option>Concert booking</option>
+                <option>Collaboration</option>
+                <option>Media / interview</option>
+                <option>Just saying hello</option>
+              </select>
+            </label>
+          </div>
+          <label>Message<textarea name="message" rows="5" required></textarea></label>
+          <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+          <button class="btn" type="submit">Send message</button>
+          <p class="form__status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <p>© <span data-year></span> <span data-bind="name"></span>. All rights reserved.</p>
+      <ul class="footer__social" data-social></ul>
+    </div>
+  </footer>
+
+  <!-- Modal (videos & articles) -->
+  <div class="modal" data-modal hidden>
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__box" role="dialog" aria-modal="true">
+      <button class="modal__close" data-close aria-label="Close">×</button>
+      <div class="modal__content" data-modal-content></div>
+    </div>
+  </div>
+
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

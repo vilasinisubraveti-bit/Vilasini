@@ -1,0 +1,265 @@
+/* Site logic — you normally don't need to edit this file. Edit content.js instead. */
+(function () {
+  const S = window.SITE || {};
+  const A = S.artist || {};
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const params = new URLSearchParams(location.search);
+
+  /* ---------- simple text bindings ---------- */
+  const bind = { name: A.name, tagline: A.tagline, heroLine: A.heroLine, location: A.location,
+    platform: S.classes?.platform, classIntro: S.classes?.intro };
+  $$("[data-bind]").forEach((el) => { const v = bind[el.dataset.bind]; if (v) el.textContent = v; });
+  document.title = `${A.name || "Music"} · ${A.tagline || "Music"}`;
+  $("[data-year]").textContent = new Date().getFullYear();
+
+  /* ---------- social icons ---------- */
+  const icons = {
+    youtube: '<path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1c.4-1.6.5-4.8.5-4.8s0-3.2-.5-4.8ZM9.7 15V9l5.8 3-5.8 3Z" fill="currentColor"/>',
+    instagram: '<rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.6" cy="6.4" r="1.2" fill="currentColor"/>',
+    spotify: '<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 9.5c3.5-1 7.5-.6 10.5 1M7.5 12.7c3-.8 6-.4 8.5 1M8 15.7c2.4-.6 4.6-.3 6.5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    facebook: '<path d="M14 8h3V4h-3c-2.8 0-4.5 1.8-4.5 4.6V11H7v4h2.5v8h4v-8H16l.8-4h-3.3V8.9c0-.6.4-.9.9-.9Z" fill="currentColor"/>',
+    whatsapp: '<path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l2 .9c.3.2.5.2.6.4.1.1.1.7-.1 1.3Z" fill="currentColor"/>',
+    email: '<rect x="2.5" y="4.5" width="19" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m3.5 6.5 8.5 6 8.5-6" fill="none" stroke="currentColor" stroke-width="2"/>'
+  };
+  const soc = S.social || {};
+  const socialHref = (k, v) => k === "whatsapp" ? `https://wa.me/${v}` : k === "email" ? `mailto:${v}` : v;
+  const socialHTML = Object.entries(soc).filter(([k, v]) => v && icons[k])
+    .map(([k, v]) => `<li><a href="${esc(socialHref(k, v))}" target="_blank" rel="noopener" aria-label="${k}"><svg viewBox="0 0 24 24">${icons[k]}</svg></a></li>`).join("");
+  $$("[data-social]").forEach((ul) => (ul.innerHTML = socialHTML));
+  const yt = $("[data-youtube-link]");
+  if (soc.youtube) yt.href = soc.youtube; else yt.remove();
+
+  /* ---------- stats ---------- */
+  $("[data-stats]").innerHTML = (A.stats || []).map((s) =>
+    `<div><div class="stat__v">${esc(s.value)}</div><div class="stat__l">${esc(s.label)}</div></div>`).join("");
+
+  /* ---------- videos ---------- */
+  const videos = (S.videos || []).filter((v) => v.title || v.id);
+  const videoCard = (v, i, hero) => {
+    const thumb = v.id
+      ? `<img src="https://i.ytimg.com/vi/${esc(v.id)}/${hero ? "maxresdefault" : "hqdefault"}.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg'">`
+      : `<div class="video__ph">♪</div>`;
+    return `<button class="video ${hero ? "video--hero" : ""}" data-video="${i}">
+      <div class="video__thumb">${thumb}<span class="play" aria-hidden="true"></span></div>
+      <div class="video__meta"><div class="video__cat">${esc(v.category)}</div><div class="video__title">${esc(v.title)}</div></div></button>`;
+  };
+  const featured = videos.find((v) => v.featured) || videos[0];
+  if (featured) $("[data-featured]").innerHTML = videoCard(featured, videos.indexOf(featured), true);
+
+  const cats = ["All", ...new Set(videos.map((v) => v.category).filter(Boolean))];
+  let activeCat = "All";
+  const renderVideos = () => {
+    $("[data-videos]").innerHTML = videos.map((v, i) => [v, i])
+      .filter(([v]) => activeCat === "All" || v.category === activeCat)
+      .map(([v, i]) => videoCard(v, i)).join("");
+  };
+  $("[data-filters]").innerHTML = cats.length > 2 ? cats.map((c) =>
+    `<button class="chip ${c === "All" ? "is-active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("") : "";
+  $("[data-filters]").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cat]"); if (!b) return;
+    activeCat = b.dataset.cat;
+    $$(".chip").forEach((c) => c.classList.toggle("is-active", c === b));
+    renderVideos();
+  });
+  renderVideos();
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-video]"); if (!b) return;
+    const v = videos[+b.dataset.video];
+    if (!v.id) { openModal(`<div class="reader"><h2>${esc(v.title)}</h2><p class="muted">Video coming soon. (Add the YouTube id in content.js)</p></div>`); return; }
+    openModal(`<div class="modal__video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(v.id)}?autoplay=1&rel=0" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`);
+  });
+
+  /* ---------- events ---------- */
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const evs = (S.announcements || []).map((e) => ({ ...e, d: new Date(e.date + "T" + (e.time || "00:00")) }));
+  const upcoming = evs.filter((e) => e.d >= today).sort((a, b) => a.d - b.d);
+  const past = evs.filter((e) => e.d < today).sort((a, b) => b.d - a.d);
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const eventHTML = (e, isPast) => {
+    const idx = evs.indexOf(e);
+    const where = [e.venue, e.city].filter(Boolean).join(", ");
+    const when = e.time ? ` · ${e.time} IST` : "";
+    return `<article class="event ${isPast ? "event--past" : ""} reveal">
+      <div class="event__date"><div class="event__day">${e.d.getDate()}</div><div class="event__mon">${MON[e.d.getMonth()]} ${e.d.getFullYear()}</div></div>
+      <div><span class="event__type">${esc(e.type)}</span><h3>${esc(e.title)}</h3>
+        <div class="event__where">${esc(where)}${when}</div>${e.note ? `<p class="muted" style="margin:6px 0 0">${esc(e.note)}</p>` : ""}</div>
+      <div class="event__actions">${!isPast ? `<button class="btn btn--ghost btn--small" data-ics="${idx}">+ Calendar</button>` : ""}
+        ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}</div>
+    </article>`;
+  };
+  const renderEvents = (which) => {
+    const list = which === "past" ? past : upcoming;
+    $("[data-events]").innerHTML = list.length ? list.map((e) => eventHTML(e, which === "past")).join("")
+      : `<p class="empty">${which === "past" ? "No past events yet." : "New dates announced soon — follow on YouTube and Instagram."}</p>`;
+    observe();
+  };
+  $$("[data-events-tab]").forEach((t) => t.addEventListener("click", () => {
+    $$("[data-events-tab]").forEach((x) => x.classList.toggle("is-active", x === t));
+    renderEvents(t.dataset.eventsTab);
+  }));
+  renderEvents("upcoming");
+
+  // Add-to-calendar (.ics)
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ics]"); if (!b) return;
+    const ev = evs[+b.dataset.ics];
+    const pad = (n) => String(n).padStart(2, "0");
+    const f = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+    const end = new Date(ev.d.getTime() + 2 * 3600e3);
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//music-site//EN", "BEGIN:VEVENT",
+      `UID:${Date.now()}@music-site`, `DTSTART;TZID=Asia/Kolkata:${f(ev.d)}`, `DTEND;TZID=Asia/Kolkata:${f(end)}`,
+      `SUMMARY:${A.name} — ${ev.title}`, `LOCATION:${[ev.venue, ev.city].filter(Boolean).join(", ")}`,
+      `DESCRIPTION:${ev.link || ""}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+    a.download = ev.title.replace(/[^\w]+/g, "-") + ".ics"; a.click();
+  });
+
+  // Next-up banner with countdown
+  const next = upcoming.find((e) => e.type !== "New venture") || upcoming[0];
+  if (next) {
+    const box = $("[data-nextup]"); box.hidden = false;
+    box.innerHTML = `<div class="wrap"><div><div class="nextup__label">Next up · ${esc(next.type)}</div>
+      <div class="nextup__title">${esc(next.title)}</div></div><div class="countdown" data-cd></div>
+      <a href="#events" class="btn btn--small" style="background:#fff">Details</a></div>`;
+    const tick = () => {
+      const ms = Math.max(0, next.d - new Date());
+      const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
+      $("[data-cd]").innerHTML = `<div><b>${d}</b><span>days</span></div><div><b>${h}</b><span>hrs</span></div><div><b>${m}</b><span>min</span></div>`;
+    };
+    tick(); setInterval(tick, 30000);
+  }
+
+  /* ---------- classes (switch in content.js) ---------- */
+  const C = S.classes || {};
+  const preview = params.get("preview") === "classes";
+  if (C.enabled || preview) {
+    $("[data-classes]").hidden = false;
+    $$("[data-classes-link],[data-classes-cta]").forEach((el) => (el.hidden = false));
+    $("[data-contact-cta]").hidden = true;
+    const body = $("[data-classes-body]");
+    const note = !C.enabled ? `<p class="preview-note">Preview mode — classes are switched OFF for the public. Set <code>enabled: true</code> in content.js to publish.</p>` : "";
+    let cur = /(^|\b)(en-IN|hi|ta|te|kn|ml|mr|bn|gu)/i.test(navigator.language) ? "INR" : "USD";
+    const money = (p) => cur === "INR" ? `₹${Number(p.priceINR).toLocaleString("en-IN")}` : `$${p.priceUSD}`;
+    const renderPlans = () => {
+      body.innerHTML = note + `<div class="currency" role="group" aria-label="Currency">
+        <button data-cur="INR" class="${cur === "INR" ? "is-active" : ""}">₹ INR</button><button data-cur="USD" class="${cur === "USD" ? "is-active" : ""}">$ USD</button></div>
+        <div class="plans">${(C.plans || []).map((p) => {
+          const link = cur === "USD" && p.payLinkUSD ? p.payLinkUSD : p.payLink;
+          return `<div class="plan ${p.featured ? "plan--featured" : ""}">${p.featured ? `<span class="plan__badge">Most popular</span>` : ""}
+          <h3>${esc(p.name)}</h3><div class="muted">${esc(p.detail)}</div>
+          <div class="plan__price">${money(p)}</div><div class="plan__alt">${cur === "INR" ? `approx. $${p.priceUSD}` : `₹${Number(p.priceINR).toLocaleString("en-IN")} in India`}</div>
+          ${link ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Pay &amp; enrol</a>`
+                 : `<a class="btn" href="#contact" data-enquire="${esc(p.name)}">Enquire to enrol</a>`}</div>`;
+        }).join("")}</div>
+        <h3 style="margin-bottom:20px">How it works</h3><ol class="steps">${(C.steps || []).map((s) => `<li>${esc(s)}</li>`).join("")}</ol>`;
+    };
+    const unlocked = () => !C.inviteOnly || sessionStorageGet("classes-ok") || params.get("code") === C.accessCode;
+    const showGate = () => {
+      body.innerHTML = note + `<div class="gate"><h3>Classes are by invitation</h3>
+        <p class="muted">Enter the access code you received, or <a href="#contact" class="link-arrow">request an invite</a>.</p>
+        <form data-gate><input placeholder="Access code" aria-label="Access code" required><button class="btn">Unlock</button></form>
+        <p class="form__status" data-gate-msg></p></div>`;
+      $("[data-gate]").addEventListener("submit", (e) => {
+        e.preventDefault();
+        if ($("input", e.target).value.trim().toUpperCase() === String(C.accessCode).toUpperCase()) {
+          sessionStorageSet("classes-ok", "1"); renderPlans();
+        } else $("[data-gate-msg]").textContent = "That code didn't match — please check and try again.";
+      });
+    };
+    unlocked() ? renderPlans() : showGate();
+    body.addEventListener("click", (e) => {
+      const c = e.target.closest("[data-cur]"); if (c) { cur = c.dataset.cur; renderPlans(); }
+      const q = e.target.closest("[data-enquire]");
+      if (q) { $("[name=interest]").value = "Online classes"; $("[name=message]").value = `Hi, I'd like to join: ${q.dataset.enquire}.`; }
+    });
+  }
+  function sessionStorageGet(k) { try { return sessionStorage.getItem(k); } catch { return null; } }
+  function sessionStorageSet(k, v) { try { sessionStorage.setItem(k, v); } catch {} }
+
+  /* ---------- articles ---------- */
+  const arts = (S.articles || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const fmt = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+  $("[data-articles]").innerHTML = arts.map((a, i) => `<button class="article reveal" data-article="${i}">
+    <div class="article__meta"><span class="article__tag">${esc(a.tag)}</span><span>${fmt(a.date)}</span>${a.readTime ? `<span>· ${esc(a.readTime)}</span>` : ""}</div>
+    <h3>${esc(a.title)}</h3><p>${esc(a.excerpt)}</p><span class="link-arrow">Read ${a.url ? "↗" : "→"}</span></button>`).join("");
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-article]"); if (!b) return;
+    const a = arts[+b.dataset.article];
+    if (a.url) { window.open(a.url, "_blank", "noopener"); return; }
+    openModal(`<article class="reader"><p class="eyebrow">${esc(a.tag)} · ${fmt(a.date)}</p><h2>${esc(a.title)}</h2>
+      ${(a.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}<p class="muted">— ${esc(A.name)}</p></article>`);
+  });
+
+  /* ---------- about ---------- */
+  const ph = $("[data-photo]");
+  const initial = (A.name || "♪").trim()[0];
+  ph.innerHTML = `<div class="ph">${esc(initial)}</div>`;
+  if (A.photo) { const img = new Image(); img.alt = A.name || ""; img.onload = () => { ph.innerHTML = ""; ph.appendChild(img); }; img.src = A.photo; }
+  $("[data-bio]").innerHTML = (A.bio || []).map((p) => `<p>${esc(p)}</p>`).join("");
+  $("[data-quotes]").innerHTML = (S.testimonials || []).map((t) =>
+    `<blockquote class="quote reveal" style="margin:0"><p>“${esc(t.quote)}”</p><cite>— ${esc(t.name)}${t.place ? ", " + esc(t.place) : ""}</cite></blockquote>`).join("");
+  const fi = S.featuredIn || [];
+  if (fi.length) $("[data-featured-in]").innerHTML = `<p class="eyebrow">Featured in &amp; collaborations</p>` + fi.map((f) => `<span>${esc(f)}</span>`).join("");
+  else $("[data-featured-in]").remove();
+
+  /* ---------- contact ---------- */
+  const quick = [];
+  if (soc.whatsapp) quick.push(`<a class="btn" href="https://wa.me/${esc(soc.whatsapp)}?text=${encodeURIComponent("Hi! I found you through your website.")}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18">${icons.whatsapp}</svg> Chat on WhatsApp</a>`);
+  if (soc.email) quick.push(`<a class="link-arrow" href="mailto:${esc(soc.email)}">${esc(soc.email)}</a>`);
+  $("[data-quick]").innerHTML = quick.join("");
+
+  const form = $("[data-form]"), status = $(".form__status", form);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) { status.textContent = "Please fill in your name, a valid email and a message."; return; }
+    const data = Object.fromEntries(new FormData(form));
+    if (data.botcheck) return;
+    if (!S.contactFormKey) {
+      const body = `${data.message}\n\n— ${data.name} (${data.email})${data.country ? ", " + data.country : ""}`;
+      location.href = `mailto:${soc.email}?subject=${encodeURIComponent("Website: " + data.interest)}&body=${encodeURIComponent(body)}`;
+      return;
+    }
+    status.textContent = "Sending…";
+    try {
+      const r = await fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ access_key: S.contactFormKey, subject: `Website enquiry: ${data.interest}`, from_name: A.name + " website", ...data }) });
+      const j = await r.json();
+      if (j.success) { form.reset(); status.textContent = "Thank you! Your message has been sent — I'll reply soon."; }
+      else throw new Error(j.message);
+    } catch { status.textContent = "Sorry, something went wrong. Please use WhatsApp or email instead."; }
+  });
+
+  /* ---------- modal ---------- */
+  const modal = $("[data-modal]"), mc = $("[data-modal-content]");
+  let lastFocus;
+  function openModal(html) { lastFocus = document.activeElement; mc.innerHTML = html; modal.hidden = false; document.body.style.overflow = "hidden"; $(".modal__close").focus(); }
+  function closeModal() { modal.hidden = true; mc.innerHTML = ""; document.body.style.overflow = ""; lastFocus && lastFocus.focus(); }
+  modal.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+
+  /* ---------- nav ---------- */
+  const nav = $(".nav"), tog = $(".nav__toggle");
+  tog.addEventListener("click", () => { const o = nav.classList.toggle("is-open"); tog.setAttribute("aria-expanded", o); });
+  $$(".nav__links a").forEach((a) => a.addEventListener("click", () => { nav.classList.remove("is-open"); tog.setAttribute("aria-expanded", false); }));
+  addEventListener("scroll", () => nav.classList.toggle("is-scrolled", scrollY > 10), { passive: true });
+
+  /* ---------- SEO structured data ---------- */
+  const ld = { "@context": "https://schema.org", "@type": "Person", name: A.name, jobTitle: A.tagline, description: A.heroLine,
+    address: A.location, sameAs: [soc.youtube, soc.instagram, soc.spotify, soc.facebook].filter(Boolean),
+    performerIn: upcoming.filter((e) => e.type === "Concert").map((e) => ({ "@type": "MusicEvent", name: e.title, startDate: e.date,
+      location: { "@type": "Place", name: e.venue || e.city, address: e.city } })) };
+  const s = document.createElement("script"); s.type = "application/ld+json"; s.textContent = JSON.stringify(ld); document.head.appendChild(s);
+
+  /* ---------- reveal on scroll ---------- */
+  var io;
+  function observe() {
+    if (!("IntersectionObserver" in window)) { $$(".reveal").forEach((el) => el.classList.add("is-in")); return; }
+    io = io || new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("is-in"); io.unobserve(en.target); } }), { threshold: 0.12 });
+    $$(".reveal:not(.is-in)").forEach((el) => io.observe(el));
+  }
+  observe();
+})();
