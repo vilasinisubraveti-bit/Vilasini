@@ -5,7 +5,7 @@
 
 window.SITE = {
   "artist": {
-    "name": "S.M. Vilasini",
+    "name": "S.M.Vilasini",
     "tagline": "Vocalist · Composer · Teacher",
     "location": "Chennai, India",
     "photo": "assets/portrait.jpg?v=1790548532022",
