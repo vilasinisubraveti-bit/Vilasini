@@ -2,64 +2,159 @@
   {
     "code": "DdIU65YE4Qj",
     "type": "concert",
-    "date": "2026-09-11",
     "caption": "",
-    "image": ""
+    "image": "",
+    "imageSrc": "https://scontent-lhr11-1.cdninstagram.com/v/t39.30808-6/802460128_10163211818461700_8890418244757930819_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=107&ig_cache_key=Mzk4MzUyNTg3ODY3NjI5MjY0Mw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTM3NC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=GCsI6-rLigcQ7kNvwFcRDWC&_nc_oc=Adoz_2Fx9gP45gytwIpSnGgZ86nonv1xRIR0NnHyt-_8EPwf3MbWR8MJr_lGAeETxF0&_nc_zt=23&_nc_ht=scontent-lhr11-1.cdninstagram.com&_nc_gid=z8jLmNY8kKLJUjPP_C-UpA&_nc_ss=7ba8c&oh=00_AQIdYXCe7galhtbhXy42Llc9veqNquzMxBBz5tMn6zTUGw&oe=6ABF36B0",
+    "date": "2026-09-11",
+    "time": "19:00",
+    "endTime": "20:30",
+    "title": "Karpagam Gardens Sat Sangh — Gokulashtami & Vinayaka Chaturthi festival",
+    "venue": "Karpaga Vinayakar Temple",
+    "address": "2nd Link Street, Karpagam Gardens, Adyar",
+    "violin": "Arya Nagarajan",
+    "mridangam": "S. Kavichelvan",
+    "description": [
+      "A concert for Karpagam Garden Sat Sangh's 15th year Sri Gokulashtami and 40th year Vinayaka Chaturthi festival series, featuring rarely heard compositions of Oothukkadu Sri Venkatakavi."
+    ]
   },
   {
     "code": "DcUuIjHAZeU",
     "type": "concert",
-    "date": "2026-08-22",
     "caption": "",
-    "image": ""
+    "image": "",
+    "imageSrc": "https://scontent-lhr6-1.cdninstagram.com/v/t39.30808-6/783591764_10163133520131700_5143911172447520892_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=103&ig_cache_key=Mzk2OTAwMDA2OTIxNDA4Mjk2NA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTM3Ni5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=Ku-XEXkgBdEQ7kNvwFR2Utb&_nc_oc=AdqXK1TC6LM13RpN5YncVkj9NgDQh1WwfVzREEWAt2yDTkJI-mknX81r90BdpELQG_Y&_nc_zt=23&_nc_ht=scontent-lhr6-1.cdninstagram.com&_nc_gid=KqY0n6KWfKjmCRB-efAFgg&_nc_ss=7ba8c&oh=00_AQJEa357XJDTa8YCyNswNt_ylvInIBT2GJUAI7z2vtpEGw&oe=6ABF422A",
+    "date": "2026-08-22",
+    "time": "18:30",
+    "endTime": "20:30",
+    "title": "Thyagaraja Vidwath Samajam",
+    "venue": "Thyagaraja Vidwath Samajam",
+    "violin": "Anuthama Murali",
+    "mridangam": "D.V. Sivaraman",
+    "description": []
   },
   {
     "code": "DcCtu-OAT4y",
     "type": "concert",
-    "date": "2026-08-15",
     "caption": "",
-    "image": ""
+    "image": "",
+    "imageSrc": "https://scontent-lhr6-1.cdninstagram.com/v/t39.30808-6/771758373_10163105431006700_6136666529943329844_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=102&ig_cache_key=Mzk2MzkzMTc2MjAzNTM0Mjg5OA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTM3Ni5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=GUkZ5kIQ2nwQ7kNvwEKU6uy&_nc_oc=AdomVrnxfyVGbAygr0LfuPZQSYlmNiXwEt9rCE3IpOxRqBaR5T-2AmcvhvnjAVE7VLI&_nc_zt=23&_nc_ht=scontent-lhr6-1.cdninstagram.com&_nc_gid=s5JracUzWVY-BridNDlfBw&_nc_ss=7ba8c&oh=00_AQIjhAfp9nK8-Aq8tgmQBgWC_gnkiC_O4CcpgEfI0k3K_Q&oe=6ABF46BF",
+    "date": "2026-08-15",
+    "time": "18:30",
+    "endTime": "20:30",
+    "title": "Independence Day Special Concert — Korattur Cultural Academy",
+    "venue": "KCA Hall",
+    "address": "No. 824, 32nd Street, TNHB Colony, Korattur",
+    "violin": "Gyandev Pappu",
+    "mridangam": "Ajeet Sridhar",
+    "description": []
   },
   {
     "code": "DbJ8hFDDw8G",
     "type": "concert",
-    "date": "2026-07-24",
     "caption": "",
-    "image": ""
+    "image": "",
+    "imageSrc": "https://scontent-lhr11-1.cdninstagram.com/v/t39.30808-6/753557005_10163019506096700_6283845637444225869_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=107&ig_cache_key=Mzk0Nzk1MjcwNDMyMDM3NjU4Mg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTM2NC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=2DPmlmlhnYQQ7kNvwGolmsZ&_nc_oc=Adqw6o71ln0gUKa0OpmR2ovdg2BP6UAnQtOc96j4llSkMtQ3eVdG_6iU4w4f8yq4UcQ&_nc_zt=23&_nc_ht=scontent-lhr11-1.cdninstagram.com&_nc_gid=cKZSklFfOEO8sHRE8nPqTA&_nc_ss=7ba8c&oh=00_AQJwdr-GmmIaIjxJIzAON315mKNblkrUhrICXHOvr-8Urw&oe=6ABF621B",
+    "date": "2026-07-24",
+    "time": "17:15",
+    "title": "Nadhadweepam Trust",
+    "venue": "Nadhadweepam Trust",
+    "address": "Srirangam",
+    "violin": "Sangeetha Priya",
+    "mridangam": "Punnur Arvind Kaushik",
+    "description": []
+  },
+  {
+    "code": "DXGdWm6lGrG",
+    "type": "concert",
+    "caption": "",
+    "image": "",
+    "imageSrc": "https://scontent-lhr11-1.cdninstagram.com/v/t51.82787-15/670632542_18576389206036595_490851045905571969_n.webp?_nc_cat=111&ig_cache_key=Mzg3NDkxMzYyNjM2MTE5NTIwNg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTQ0MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=cmHp5FN-n1sQ7kNvwF2tjJm&_nc_oc=AdpsQUDy4zISkzsoI_rx1ms2WnjWqA3Io5wnFDxgpAp4mTxwNEnOu9G4kPMyQt3VM9s&_nc_zt=23&_nc_ht=scontent-lhr11-1.cdninstagram.com&_nc_gid=vT3XCHrl7Aji0oQABpfL1g&_nc_ss=7ba8c&oh=00_AQLgWgxLi3cA5ZD_fQ2rsHN-Z3N7koZC1jyRuye3smSrlA&oe=6ABF5BBD",
+    "date": "2026-04-14",
+    "time": "19:00",
+    "title": "Sadguru Sath Sangam — 24th Sri Ramanavami Sangeetha Mahotsavam",
+    "venue": "Sri Sowmya Damodara Perumal Temple",
+    "address": "Villivakkam",
+    "violin": "Villivakkam S. Raghuraman",
+    "mridangam": "Neyveli K. Ramkumar",
+    "ghatam": "Aranala Sabarish",
+    "description": []
+  },
+  {
+    "code": "DWC_smVgX_v",
+    "type": "concert",
+    "caption": "",
+    "image": "",
+    "imageSrc": "https://scontent-lhr11-1.cdninstagram.com/v/t39.30808-6/653360782_10162496151856700_2526851619125774142_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=106&ig_cache_key=Mzg1NTkyNDM3MjczMjczOTU2Nw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTYwMC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=pPnglzUCBLgQ7kNvwEfT7d0&_nc_oc=AdouK7fYcuHy3HG7yDr8lW3IDxJFdlUPVg26ejNwS96i0T08VNiCs-SdAyk6Y4kIyCE&_nc_zt=23&_nc_ht=scontent-lhr11-1.cdninstagram.com&_nc_gid=XZcZzwe60kDrJJFTzsli6w&_nc_ss=7ba8c&oh=00_AQJ4wG-E9tKrBuvk5EUAJm_EpusEfky13FbIx6rq-s9JoQ&oe=6ABF488D",
+    "date": "2026-03-19",
+    "time": "18:15",
+    "title": "Ugadi Special — Purandaradasar & Annamacharya Compositions",
+    "venue": "Sri Ranga Hall, Kaligi Ranganathan Montford School",
+    "address": "Patel Road, Perambur, Chennai 600011",
+    "violin": "Madurai T. Kishore",
+    "mridangam": "Sriram Srinivasan",
+    "description": [
+      "A Grand Carnatic Vocal Concert for Perambur Sangeetha Sabha on Ugadi, featuring an exclusive selection of Purandaradasar and Annamacharya kritis."
+    ]
+  },
+  {
+    "code": "DRBbVjLAXGK",
+    "type": "concert",
+    "caption": "",
+    "image": "",
+    "imageSrc": "https://scontent-lhr11-1.cdninstagram.com/v/t39.30808-6/582281707_10161928375771700_6691093064814469506_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=110&ig_cache_key=Mzc2NTQxMDk5MTU4ODg2NDM5NA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTYwMC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=M6kcqSGphIgQ7kNvwFNDWMl&_nc_oc=Ado3wYTSTw6l4JDIFfQYnhHdk_nNbABH8ArD-ksyQpUoRpXwqFTN_buSSkl7xmd6NBQ&_nc_zt=23&_nc_ht=scontent-lhr11-1.cdninstagram.com&_nc_gid=_miZ83bVLLEIX0HlwHSW0w&_nc_ss=7ba8c&oh=00_AQKkgyj9mmkWDgR-FS7gdW_kvlx9fPd2_glJjqCtooMl3A&oe=6ABF4336",
+    "date": "2025-11-14",
+    "time": "18:15",
+    "title": "JB Cultural Foundation — Compositions on Thillai Natarajar",
+    "venue": "Ragasudha Hall",
+    "address": "Luz, Mylapore (behind Nageswara Rao Park)",
+    "violin": "Mukunthan Samraj",
+    "mridangam": "J.P. Suriya Nambisan",
+    "description": [
+      "The third concert of her Thematic November series, dedicated to compositions on Thillai Natarajar."
+    ]
+  },
+  {
+    "code": "DQwYJ3MgSim",
+    "type": "concert",
+    "caption": "",
+    "image": "",
+    "imageSrc": "https://scontent-lhr6-2.cdninstagram.com/v/t39.30808-6/576868195_10161899686201700_7962070227879271087_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=105&ig_cache_key=Mzc2MDYxMTkxOTcxMTUxMjc0Mg%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuMTYwMC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=dfD4YXnpdgUQ7kNvwF_H8sn&_nc_oc=AdqFa3nd8gNNVV_j9W3NGCfRvq2Ivy--XDEGYxUJxlAVgcVXXI-1n3iLT_OxBCpOFlc&_nc_zt=23&_nc_ht=scontent-lhr6-2.cdninstagram.com&_nc_gid=4cgjIWyiTpdAa7sOPTSl0Q&_nc_ss=7ba8c&oh=00_AQKr1UNQglpfuzd5qjRk7JEKdxFTTJYPG987Qp05fXAing&oe=6ABF4B66",
+    "date": "2025-11-07",
+    "title": "A Thematic November",
+    "description": [
+      "Thematic concerts make a musician explore their repertoire and learn new kritis — three thematic concerts this November."
+    ],
+    "events": [
+      {
+        "date": "2025-11-09",
+        "time": "16:45",
+        "title": "Prakrithyotsavam — Compositions on Ayodhya and Mathura",
+        "venue": "Sri Ragavendra Mutt",
+        "address": "Mylapore",
+        "others": "Presented by Gayathri Fine Arts Academy"
+      },
+      {
+        "date": "2025-11-13",
+        "time": "18:00",
+        "title": "Indian Fine Arts Society — Compositions of Sri Annamacharya",
+        "venue": "Ethiraja Kalyana Nilayam",
+        "address": "TTK Road, Alwarpet"
+      }
+    ]
   },
   {
     "code": "DXcWAwTn98w",
     "type": "honour",
     "date": "2026-04-22",
     "caption": "",
-    "image": ""
-  },
-  {
-    "code": "DXGdWm6lGrG",
-    "type": "concert",
-    "date": "2026-04-14",
-    "caption": "",
-    "image": ""
-  },
-  {
-    "code": "DWC_smVgX_v",
-    "type": "concert",
-    "date": "2026-03-19",
-    "caption": "",
-    "image": ""
-  },
-  {
-    "code": "DRBbVjLAXGK",
-    "type": "concert",
-    "date": "2025-11-14",
-    "caption": "",
-    "image": ""
-  },
-  {
-    "code": "DQwYJ3MgSim",
-    "type": "concert",
-    "date": "2025-11-07",
-    "caption": "",
-    "image": ""
+    "image": "",
+    "imageSrc": "https://scontent-lhr6-1.cdninstagram.com/v/t51.82787-15/671811060_18578364652036595_346190646371552149_n.webp?_nc_cat=102&ig_cache_key=Mzg4MTA3MzA5NTI4MTEwMDg5OA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0ueHBpZHMuMTQ0MC5zZHIucmVndWxhcl9waG90by5DMyJ9&_nc_ohc=reEvArrWjXIQ7kNvwE3Hpcx&_nc_oc=Ado-twaNtvmLM96YEA8q0iIczxg1BpakMhfzGjzfXaBkfjP_1UEQ2RlmDqp4TYnVhNM&_nc_zt=23&_nc_ht=scontent-lhr6-1.cdninstagram.com&_nc_gid=DPMPuifwxBKybyW8gRp0mQ&_nc_ss=7ba8c&oh=00_AQJ05TOCSDYtAlCy8cEDITKTwjwlqFI6zS45nRDCHuXvDw&oe=6ABF37AF",
+    "title": "Chief Guest — Salangai Poojai of Vedavalli and Keerthana",
+    "description": [
+      "It was truly an honour to preside as the Chief Guest for the Salangai Poojai of two incredibly talented dancers, Vedavalli and Keerthana. As disciples of Smt. Sudhalakshmi, their performance was a testament to rigorous training and artistic devotion.",
+      "The evening's crowning achievement was the presentation of the Chatuslokhi — four profound verses dedicated to Goddess Mahalakshmi by the revered Saint Alavandar. The verses were elevated by the soulful and evocative musical score composed by T. Kishore.",
+      "Smt. Sudhalakshmi's direction was nothing short of exemplary. She managed a rare feat of translating complex spiritual philosophy into a visual language that was both accessible and deeply moving.",
+      "It was a memorable celebration of tradition, talent and the divine."
+    ]
   }
 ]

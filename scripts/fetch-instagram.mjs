@@ -61,21 +61,25 @@ fs.mkdirSync("assets/instagram", { recursive: true });
 const out = [];
 for (const [code, p] of posts) {
   const old = prev[code] || {};
-  let { caption, image } = { caption: old.caption || "", image: "" };
-  const localImg = `assets/instagram/${code}.jpg`;
-  const haveImg = fs.existsSync(localImg);
-  if (!old.caption || !haveImg) {
+  const entry = { ...old, code, type: old.type || p.type, date: old.date || dateOf(code) };   // keep every detail already saved
+  const ext = /\.webp(\?|$)/i.test(old.imageSrc || "") ? "webp" : "jpg";
+  const localImg = [`assets/instagram/${code}.jpg`, `assets/instagram/${code}.webp`].find((f) => fs.existsSync(f)) || `assets/instagram/${code}.${ext}`;
+  let imgUrl = old.imageSrc || "";
+  // only visit Instagram when we have neither text nor details for this post
+  if (!old.caption && !old.title) {
     const found = await inspect(code);
-    caption = found.caption || caption;
-    if (!haveImg && found.image) {
-      try {
-        const r = await fetch(found.image, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20000) });
-        if (r.ok) fs.writeFileSync(localImg, Buffer.from(await r.arrayBuffer()));
-      } catch (e) { console.log("  image download:", e.message); }
-    }
-    console.log(`${caption ? "✓" : "✗"} ${code}  caption:${caption ? "yes" : "no"}  photo:${fs.existsSync(localImg) ? "yes" : "no"}`);
+    if (found.caption) entry.caption = found.caption;
+    if (found.image) imgUrl = found.image;
   }
-  out.push({ code, type: p.type, date: dateOf(code), caption, image: fs.existsSync(localImg) ? localImg : "" });
+  if (!fs.existsSync(localImg) && imgUrl) {
+    try {
+      const r = await fetch(imgUrl, { headers: { "User-Agent": UA, Referer: "https://www.instagram.com/" }, signal: AbortSignal.timeout(30000) });
+      if (r.ok) fs.writeFileSync(localImg, Buffer.from(await r.arrayBuffer())); else console.log(`  photo ${code}: HTTP ${r.status}`);
+    } catch (e) { console.log(`  photo ${code}:`, e.message); }
+  }
+  entry.image = fs.existsSync(localImg) ? localImg : (entry.image || "");
+  console.log(`${entry.caption || entry.title ? "✓" : "✗"} ${code}  text:${entry.caption || entry.title ? "yes" : "no"}  photo:${entry.image ? "yes" : "no"}`);
+  out.push(entry);
 }
 out.sort((a, b) => b.date.localeCompare(a.date));
 fs.writeFileSync("instagram.json", JSON.stringify(out, null, 2) + "\n");

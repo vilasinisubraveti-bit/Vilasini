@@ -104,27 +104,37 @@
     upcoming = evs.filter((e) => !e.isPast).sort((a, b) => a.d - b.d);
     past = evs.filter((e) => e.isPast).sort((a, b) => b.d - a.d);
   };
+  // time "18:30" -> "6:30 PM"
+  const t12 = (t) => { const m = String(t || "").match(/^(\d{1,2}):(\d{2})/); if (!m) return t || ""; let h = +m[1]; const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${h}:${m[2]} ${ap}`; };
+  const whenText = (e) => e.time ? `${t12(e.time)}${e.endTime ? " – " + t12(e.endTime) : ""} IST` : "";
+  const placeText = (e) => [e.venue, e.address || e.city].filter(Boolean).join(", ");
+  // accompanists: only lines that are filled in are shown
+  const ARTISTS = [["violin", "Violin"], ["mridangam", "Mridangam"], ["ghatam", "Ghatam"], ["others", "Others"]];
+  const artistLines = (e) => ARTISTS.filter(([k]) => e[k] && String(e[k]).trim()).map(([k, l]) => `<span class="event__artist"><b>${l}:</b> ${esc(e[k])}</span>`).join("");
   const eventHTML = (e, isPast) => {
     const idx = evs.indexOf(e);
-    const where = [e.venue, e.city].filter(Boolean).join(", ");
-    const when = e.time ? `${where ? " · " : ""}${e.time} IST` : "";
+    const place = placeText(e), when = whenText(e), artists = artistLines(e);
     const more = e.description && e.description.length;
     return `<article class="event ${isPast ? "event--past" : ""} ${e.image ? "event--img" : ""} reveal" ${e.code ? `data-code="${esc(e.code)}"` : ""}>
       ${e.image ? `<button class="event__pic" data-event-more="${idx}" aria-label="Open"><img src="${esc(e.image)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></button>` : ""}
       <div class="event__date"><div class="event__day">${e.day}</div><div class="event__mon">${MON[e.m - 1]} ${e.y}</div></div>
       <div><span class="event__type">${esc(e.type || "Concert")}</span><h3>${esc(e.title)}</h3>
-        <div class="event__where">${esc(where)}${when}</div>${e.note ? `<p class="muted" style="margin:6px 0 0">${esc(e.note)}</p>` : ""}</div>
+        ${when || place ? `<div class="event__where">${[when, esc(place)].filter(Boolean).join(" · ")}</div>` : ""}
+        ${artists ? `<div class="event__artists">${artists}</div>` : ""}
+        ${e.note ? `<p class="muted" style="margin:6px 0 0">${esc(e.note)}</p>` : ""}</div>
       <div class="event__actions">${!isPast ? `<button class="btn btn--ghost btn--small" data-ics="${idx}">+ Calendar</button>` : ""}
         ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}
-        ${more ? `<button class="btn btn--ghost btn--small" data-event-more="${idx}">Read more</button>` : ""}</div>
+        ${more || e.image ? `<button class="btn btn--ghost btn--small" data-event-more="${idx}">${more ? "Read more" : "View"}</button>` : ""}</div>
     </article>`;
   };
   document.addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-event-more]"); if (!b || document.body.classList.contains("is-editing")) return;
     const e = evs[+b.dataset.eventMore]; if (!e) return;
-    const where = [e.venue, e.city].filter(Boolean).join(", ");
-    openModal(`<article class="reader"><p class="eyebrow">${esc([e.type || "Concert", `${e.day} ${MON[e.m - 1]} ${e.y}`, where].filter(Boolean).join(" · "))}</p>
-      <h2>${esc(e.title)}</h2>${e.image ? `<img src="${esc(e.image)}" alt="" style="width:100%;border-radius:12px;margin:10px 0 18px">` : ""}
+    const rows = [["Date", `${e.day} ${MON[e.m - 1]} ${e.y}`], ["Time", whenText(e)], ["Venue", e.venue], ["Place", e.address || e.city],
+      ...ARTISTS.map(([k, l]) => [l, e[k]])].filter(([, v]) => v && String(v).trim());
+    openModal(`<article class="reader"><p class="eyebrow">${esc(e.type || "Concert")}</p><h2>${esc(e.title)}</h2>
+      ${e.image ? `<img src="${esc(e.image)}" alt="" style="width:100%;border-radius:12px;margin:10px 0 18px">` : ""}
+      <dl class="event-facts">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       ${(e.description || []).map((t) => `<p>${esc(t)}</p>`).join("")}</article>`);
   });
   const renderEvents = () => {
@@ -164,8 +174,11 @@
     const key = (e) => `${e.date}|${String(e.title).trim().toLowerCase()}`;
     const seen = new Set(manualEvents.map(key));
     const calEv = (Array.isArray(cal) ? cal : []).filter((e) => !seen.has(key(e)));
-    const igEv = igItems(ig, "concert").map((x) => ({ type: "Concert", title: x.title, date: x.date, venue: x.venue || "", city: x.city || "",
-      note: x.description[0] && x.description[0].length < 160 ? x.description[0] : "", description: x.description, image: x.image, code: x.code }));
+    const FIELDS = ["venue", "address", "city", "time", "endTime", "violin", "mridangam", "ghatam", "others", "link", "linkLabel"];
+    const pick = (o) => Object.fromEntries(FIELDS.filter((k) => o[k]).map((k) => [k, o[k]]));
+    const igEv = igItems(ig, "concert").flatMap((x) => (x.events && x.events.length ? x.events : [{}]).map((sub) => ({
+      type: "Concert", code: x.events && x.events.length ? "" : x.code, image: x.image, ...pick(x), ...pick(sub),
+      title: sub.title || x.title, date: sub.date || x.date, description: sub.description || x.description })));
     showEvents([...manualEvents, ...calEv, ...igEv]);
   });
 
@@ -212,13 +225,17 @@
     const over = {}; (S.instagramPosts || []).forEach((x) => { const c = igCode(typeof x === "string" ? x : x?.url); if (c) over[c] = typeof x === "string" ? {} : x; });
     const hidden = new Set((S.instagramHidden || []).map(igCode));
     return (Array.isArray(list) ? list : []).filter((p) => p && p.code && !hidden.has(p.code) && ((over[p.code]?.type || p.type || "concert") === type))
+      // hide posts that have no text and no picture yet (e.g. Instagram blocked the copy) — they appear once filled in
+      .filter((p) => { const o = over[p.code] || {}; return p.caption || p.image || p.title || o.title || o.image || (o.description && o.description.length); })
       .map((p) => {
         const o = over[p.code] || {};
         const typed = o.description && o.description.length ? (Array.isArray(o.description) ? o.description : String(o.description).split(/\n\s*\n/)) : null;
+        const saved = p.description && p.description.length ? p.description : null;
         const cap = parseCaption(p.caption);
-        return { code: p.code, date: o.date || p.date || (igDate(p.code) || new Date()).toISOString().slice(0, 10),
-          title: o.title || cap.title || (type === "honour" ? "Chief guest" : "Concert"), description: typed || cap.paras,
-          image: o.image || p.image || "", venue: o.venue || "", city: o.city || "" };
+        const filled = Object.fromEntries(Object.entries(o).filter(([, v]) => v !== "" && v != null && !(Array.isArray(v) && !v.length)));
+        return { ...p, ...filled, code: p.code, date: o.date || p.date || (igDate(p.code) || new Date()).toISOString().slice(0, 10),
+          title: o.title || p.title || cap.title || (type === "honour" ? "Chief guest" : "Concert"), description: typed || saved || cap.paras,
+          image: o.image || p.image || "" };
       }).sort((a, b) => b.date.localeCompare(a.date));
   }
   // Accomplishments = chief guest & honours

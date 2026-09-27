@@ -320,3 +320,8 @@ a.achv:hover{transform:translateY(-3px);border-color:var(--accent)}
 .event[data-code]{position:relative}
 @media (max-width:700px){.event--img{grid-template-columns:64px 1fr}.event__pic{grid-column:1/-1;width:100%;aspect-ratio:16/10}}
 .event--past.event--img{opacity:1}
+
+.event__artists{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:.9rem;color:var(--muted)}
+.event__artist b{color:var(--text);font-weight:600}
+.event-facts{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 18px;padding:14px 16px;background:var(--bg-alt);border-radius:12px}
+.event-facts dt{font-weight:600;color:var(--accent)}.event-facts dd{margin:0}

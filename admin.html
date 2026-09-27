@@ -168,15 +168,16 @@ textarea{min-height:90px;resize:vertical}
       T("quote", "Short quote to show (optional)", { type: "textarea" }),
       T("image", "Picture link (optional)", { help: "Leave empty to use the article's own picture." }) ] },
       list2: { path: "pressHidden", add: "Hide a link", label: "Hide these links (e.g. a found article that is not about her)", string: true } },
-    { title: "Instagram posts", hint: "Past concerts & chief-guest posts — picture and write-up are copied from Instagram automatically", list: { path: "instagramPosts", add: "Add Instagram post", newFirst: true,
-      title: (x) => `${x.type === "honour" ? "Chief guest" : "Concert"} · ${x.title || x.url || ""}`, item: [
+    { title: "Instagram posts", hint: "Past concerts & chief guest — edit details; empty boxes keep what was copied from Instagram", list: { path: "instagramPosts", add: "Add Instagram post", newFirst: true,
+      title: (x) => `${x.date || ""} ${x.type === "honour" ? "Chief guest" : "Concert"} · ${x.title || x.url || ""}`, item: [
       T("url", "Instagram post link"),
       T("type", "Show under", { type: "select", options: ["concert", "honour"], help: "concert = Concerts → Past · honour = Accomplishments (chief guest)" }),
-      T("title", "Title (optional)", { help: "Leave empty to use the first line of the Instagram caption." }),
-      T("date", "Date (optional)", { type: "date", help: "Leave empty to use the date it was posted." }),
-      T("venue", "Venue (optional)"), T("city", "City (optional)"),
-      T("description", "Write-up (optional)", { type: "paragraphs", help: "Leave empty to use the Instagram caption. Blank line = new paragraph." }),
-      T("image", "Picture (optional)", { type: "image", folder: "assets/instagram", help: "Leave empty to use the Instagram photo." }) ] },
+      T("title", "Title / organiser"),
+      T("date", "Date", { type: "date" }), T("time", "Start time (IST)", { type: "time" }), T("endTime", "End time (optional)", { type: "time" }),
+      T("venue", "Venue"), T("address", "Address / place"),
+      T("violin", "Violin"), T("mridangam", "Mridangam"), T("ghatam", "Ghatam"), T("others", "Others (e.g. Kanjira, Veena, tanpura)"),
+      T("description", "Write-up", { type: "paragraphs", help: "Blank line = new paragraph." }),
+      T("image", "Picture", { type: "image", folder: "assets/instagram" }) ] },
       list2: { path: "instagramHidden", add: "Hide a post", label: "Hidden posts (links)", string: true } },
     { title: "What people say", hint: "Testimonials", list: { path: "testimonials", add: "Add testimonial", title: (x) => x.name, item: [
       T("quote", "Quote", { type: "textarea" }), T("name", "Name"), T("place", "Place") ] } },
@@ -195,10 +196,14 @@ textarea{min-height:90px;resize:vertical}
       T("social.email", "Email"), T("social.whatsapp", "WhatsApp number", { help: "Country code + number, no + or spaces, e.g. 919876543210" }),
       T("social.youtube", "YouTube link"), T("social.instagram", "Instagram link"), T("social.facebook", "Facebook link"), T("social.spotify", "Spotify link"), T("social.address", "Address (optional, shown in Contact)"),
       T("contactFormKey", "Web3Forms key (contact form)") ] },
-    { title: "Extra announcements", hint: "Concerts come from Google Calendar — add extras here", list: { path: "announcements", add: "Add announcement", title: (x) => `${x.date || ""} ${x.title || ""}`, item: [
+    { title: "Concerts & announcements", hint: "Date, time, venue, accompanists — empty boxes are simply not shown", list: { path: "announcements", add: "Add concert / announcement", newFirst: true, title: (x) => `${x.date || ""} ${x.title || ""}`, item: [
       T("type", "Type", { type: "select", options: ["Concert", "Online", "Workshop", "Masterclass", "Festival", "Album", "Announcement", "New venture"] }),
-      T("title", "Title"), T("date", "Date", { type: "date" }), T("time", "Time (IST)", { type: "time" }),
-      T("venue", "Venue"), T("city", "City"), T("link", "Link"), T("linkLabel", "Button text", { help: "e.g. Get tickets" }), T("note", "Note", { type: "textarea" }) ] } },
+      T("title", "Title / organiser"),
+      T("date", "Date", { type: "date" }), T("time", "Start time (IST)", { type: "time" }), T("endTime", "End time (optional)", { type: "time" }),
+      T("venue", "Venue"), T("address", "Address / place"),
+      T("violin", "Violin"), T("mridangam", "Mridangam"), T("ghatam", "Ghatam"), T("others", "Others (e.g. Kanjira, Veena, tanpura)"),
+      T("link", "Tickets / details link (optional)"), T("linkLabel", "Button text", { help: "e.g. Get tickets" }), T("note", "Short note (optional)", { type: "textarea" }),
+      T("description", "Write-up (optional)", { type: "paragraphs" }), T("image", "Picture / poster (optional)", { type: "image", folder: "assets/concerts" }) ] } },
     { title: "YouTube", hint: "Channel & hand-picked videos", fields: [
       T("youtubeChannelId", "Channel handle", { help: "e.g. @Vilzbuzz — latest uploads appear automatically" }),
       T("autoVideoCategory", "Label for automatic videos") ],
@@ -380,6 +385,18 @@ textarea{min-height:90px;resize:vertical}
     if (!data) throw new Error("content.js could not be read");
     data.newsletter = { enabled: true, heading: "Stay in tune", text: "Concert dates, new videos and class openings — straight to your inbox. No spam, unsubscribe anytime.", provider: "email", ...(data.newsletter || {}) };
     data.achievements ??= []; data.press ??= [];
+    // Show the posts already copied from Instagram so their details can be edited here
+    try {
+      const ig = await (await fetch("instagram.json?t=" + Date.now())).json();
+      const code = (u) => (String(u || "").match(/\/(?:p|reel|tv)\/([\w-]{8,})/) || [])[1];
+      data.instagramPosts ??= [];
+      const have = new Set(data.instagramPosts.map((x) => code(typeof x === "string" ? x : x.url)));
+      const hidden = new Set((data.instagramHidden || []).map(code));
+      ig.filter((p) => !have.has(p.code) && !hidden.has(p.code)).forEach((p) => data.instagramPosts.push({
+        url: `https://www.instagram.com/p/${p.code}/`, type: p.type || "concert", title: p.title || "", date: p.date || "", time: p.time || "", endTime: p.endTime || "",
+        venue: p.venue || "", address: p.address || "", violin: p.violin || "", mridangam: p.mridangam || "", ghatam: p.ghatam || "", others: p.others || "",
+        description: p.description || [], image: p.image || "" }));
+    } catch {}
   }
 
   async function save() {
