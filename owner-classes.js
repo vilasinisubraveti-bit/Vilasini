@@ -96,28 +96,93 @@
     vault.portalKey ||= CC.randomKey();
     const A = site.artist || {}, soc = site.social || {};
     const pub = (s) => ({ id: s.id, title: s.title, start: s.start, duration: s.duration, weeks: s.weeks, link: s.link, platform: CC.platformOf(s.link), meetingId: s.meetingId, passcode: s.passcode, notes: s.notes });
-    const portal = { teacher: A.name || "", photo: A.photo || "", whatsapp: soc.whatsapp || "", email: soc.email || "", note: vault.note || "",
-      availability: vault.availability || [], sessions: vault.sessions.filter((s) => s.audience !== "private").map(pub), updated: new Date().toISOString() };
+    const pay = vault.payment || {};
+    vault.students ||= [];
+    const base = { teacher: A.name || "", photo: A.photo || "", whatsapp: soc.whatsapp || "", email: soc.email || "", note: vault.note || "",
+      intro: vault.intro || "", plans: (vault.plans || []).filter((p) => p.name), upiId: pay.upiId || "", upiName: pay.upiName || A.name || "", payNote: pay.note || "",
+      availability: vault.availability || [], updated: new Date().toISOString() };
+    // "Not available" blocks: every class that isn't a whole-group class, next 120 days — times only, no names or links
+    const horizon = Date.now() + 120 * 864e5;
+    const busyOf = (list) => list.flatMap((s) => CC.occurrences(s).filter((d) => d.getTime() + (+s.duration || 60) * 6e4 > Date.now() && d.getTime() < horizon)
+      .map((d) => ({ s: d.toISOString(), e: new Date(d.getTime() + (+s.duration || 60) * 6e4).toISOString() })));
+    const groupSessions = vault.sessions.filter((s) => s.audience === "all");
+    const portal = { ...base, sessions: groupSessions.map(pub), busy: busyOf(vault.sessions.filter((s) => s.audience !== "all")) };
     const vaultRec = await CC.lock(vault, pin);
     const portalRec = await CC.lock(portal, vault.portalKey);
     const invites = {};
-    for (const s of vault.sessions) invites[s.id] = await CC.lock({ ...pub(s), teacher: portal.teacher, photo: portal.photo, whatsapp: portal.whatsapp, email: portal.email }, s.key);
+    for (const s of vault.sessions) invites[s.id] = await CC.lock({ ...pub(s), teacher: base.teacher, photo: base.photo, whatsapp: base.whatsapp, email: base.email }, s.key);
+    // Each student's personal page: their own classes (+ group classes); everyone else's classes are only "Not available"
+    const studentsRec = {};
+    for (const st of vault.students) {
+      const mine = vault.sessions.filter((s) => s.audience === "student" && s.studentId === st.id);
+      studentsRec[st.id] = await CC.lock({ ...base, studentName: st.name, sessions: [...mine, ...groupSessions].map(pub),
+        busy: busyOf(vault.sessions.filter((s) => s.audience !== "all" && !(s.audience === "student" && s.studentId === st.id))) }, st.key);
+    }
     try {
-      await O.commit(what, (d) => { d.classVault = vaultRec; d.classPortal = portalRec; d.classInvites = invites; });
+      await O.commit(what, (d) => { d.classVault = vaultRec; d.classPortal = portalRec; d.classInvites = invites; d.classStudents = studentsRec; });
       O.msg("Saved ✓ — students see it in about a minute", "ok");
       return true;
     } catch (e) { O.msg("Could not save: " + e.message, "err", 10000); return false; }
   }
 
   /* ---------- main screen ---------- */
-  let tab = "classes";
+  let tab = "cal";
   function main() {
     const body = shell("Classes & student portal");
     body.innerHTML = `<div class="cm__tabs">
-      <button data-t="classes">📅 Classes</button><button data-t="avail">🕒 Availability</button><button data-t="portal">🔗 Student portal link</button></div><div data-v></div>`;
+      <button data-t="cal">🗓 Calendar</button><button data-t="classes">📅 Classes</button><button data-t="students">👩‍🎓 Students</button><button data-t="avail">🕒 Availability</button><button data-t="fees">💳 Fees & payment</button><button data-t="portal">🔗 General portal link</button></div><div data-v></div>`;
     $$("[data-t]", body).forEach((b) => { b.classList.toggle("on", b.dataset.t === tab); b.onclick = () => { tab = b.dataset.t; main(); }; });
     const v = $("[data-v]", body);
-    ({ classes: viewClasses, avail: viewAvailability, portal: viewPortal })[tab](v);
+    ({ cal: viewCalendar, classes: viewClasses, students: viewStudents, avail: viewAvailability, fees: viewFees, portal: viewPortal })[tab](v);
+  }
+
+  const whoFor = (s) => s.audience === "all" ? "All students (group)" : s.audience === "student" ? ((vault.students || []).find((x) => x.id === s.studentId)?.name || "Student") : "Link only";
+  const studentUrl = (st) => `${O.SITE_URL}students.html#s.${st.id}.${st.key}`;
+
+  /* Full calendar — only you and your brother see this */
+  function viewCalendar(v) {
+    const now = new Date(), end = new Date(Date.now() + 21 * 864e5);
+    const occ = vault.sessions.flatMap((s) => CC.occurrences(s).filter((d) => d.getTime() + (+s.duration || 60) * 6e4 > now && d < end).map((d) => ({ s, d }))).sort((a, b) => a.d - b.d);
+    const dayKey = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long" }).format(d);
+    const tIST = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true }).format(d);
+    const groups = {}; occ.forEach((o) => (groups[dayKey(o.d)] ||= []).push(o));
+    v.innerHTML = `<div class="row" style="justify-content:space-between"><p class="muted">All classes for the next 3 weeks (IST). Only you two see this — each student sees only their own classes.</p>
+      <button class="b" data-new>+ Schedule a class</button></div>
+      ${occ.length ? Object.entries(groups).map(([day, list]) => `<div class="card"><h3>${esc(day)}</h3>${list.map(({ s, d }) => `<div class="row" style="justify-content:space-between;border-top:1px solid #efe6d8;padding-top:8px">
+          <div><b>${esc(tIST(d))}</b> · ${esc(s.duration)} min · ${esc(s.title)}<div class="muted">${esc(whoFor(s))} · ${esc(CC.platformOf(s.link))}</div></div>
+          <a class="b g" href="${esc(s.link)}" target="_blank" rel="noopener">Start ↗</a></div>`).join("")}</div>`).join("")
+        : `<div class="card"><p class="muted">No classes in the next 3 weeks.</p></div>`}`;
+    $("[data-new]", v).onclick = () => editForm(v, null);
+  }
+
+  /* Students: each gets a personal link (remembered on their device) */
+  function viewStudents(v) {
+    vault.students ||= [];
+    v.innerHTML = `<div class="card"><h3>Add a student</h3><form class="row" data-add><input name="name" placeholder="Student name" required style="flex:1 1 180px">
+        <input name="phone" placeholder="WhatsApp number (optional, e.g. 919876543210)" style="flex:1 1 220px"><button class="b">Add student</button></form>
+        <p class="muted">Each student gets their own private link. They see only their own classes and join links — other students' classes show as "Not available".</p></div>
+      <div data-list style="display:grid;gap:10px"></div>`;
+    const L = $("[data-list]", v);
+    vault.students.forEach((st) => {
+      const n = vault.sessions.filter((s) => s.audience === "student" && s.studentId === st.id).length;
+      const url = studentUrl(st), text = `Namaste ${st.name}! Here is your personal class page — your class times and join links: ${url}`;
+      const c = document.createElement("div"); c.className = "card";
+      c.innerHTML = `<div class="row"><h3 style="flex:1">${esc(st.name)}</h3><span class="tag">${n} class${n === 1 ? "" : "es"}</span></div>
+        <div class="row"><button class="b g" data-copy>Copy personal link</button><a class="b w" target="_blank" rel="noopener" href="${esc(st.phone ? `https://wa.me/${st.phone}?text=${encodeURIComponent(text)}` : wa(text))}">Send on WhatsApp</a>
+          <button class="b g" data-reset>Reset link</button><button class="b g" data-del>Remove</button></div>`;
+      $("[data-copy]", c).onclick = (e) => copy(url, e.target);
+      $("[data-reset]", c).onclick = async () => { if (!confirm(`Reset ${st.name}'s link? The old one stops working.`)) return; st.key = CC.randomKey(); if (await save("Reset student link")) main(); };
+      $("[data-del]", c).onclick = async () => { if (!confirm(`Remove ${st.name}? Their classes become "link only".`)) return;
+        vault.sessions.forEach((s) => { if (s.studentId === st.id) { s.audience = "private"; delete s.studentId; } });
+        vault.students = vault.students.filter((x) => x !== st); if (await save("Remove student")) main(); };
+      L.appendChild(c);
+    });
+    $("[data-add]", v).onsubmit = async (e) => {
+      e.preventDefault(); const f = e.target;
+      vault.students.push({ id: CC.randomId(), key: CC.randomKey(), name: f.name.value.trim(), phone: f.phone.value.replace(/\D/g, "") });
+      $$("button,input", f).forEach((x) => (x.disabled = true));
+      if (await save("Add student")) main();
+    };
   }
 
   function viewClasses(v) {
@@ -131,7 +196,7 @@
     list.forEach(({ s, next }) => {
       const c = document.createElement("div"); c.className = "card";
       c.innerHTML = `<div class="row"><h3 style="flex:1">${esc(s.title)}</h3>
-          <span class="tag ${s.audience === "private" ? "priv" : ""}">${s.audience === "private" ? "Private link only" : "On student portal"}</span></div>
+          <span class="tag ${s.audience === "all" ? "" : "priv"}">${esc(whoFor(s))}</span></div>
         <p class="muted">${next ? "Next: <b>" + esc(fmtIST(next)) + " IST</b>" : "<b>Finished</b>"} · ${esc(s.duration)} min${(+s.weeks || 1) > 1 ? ` · weekly × ${esc(s.weeks)}` : ""} · ${esc(CC.platformOf(s.link))}</p>
         <div class="row"><button class="b g" data-copy>Copy invite link</button><a class="b w" target="_blank" rel="noopener" data-wa>WhatsApp invite</a>
           <a class="b g" href="${esc(s.link)}" target="_blank" rel="noopener">Start class ↗</a><button class="b g" data-edit>Edit</button><button class="b g" data-del>Delete</button></div>`;
@@ -152,9 +217,12 @@
         <label>Start time (IST)<input name="time" type="time" required value="${esc(p.time)}"></label>
         <label>Length (minutes)<input name="duration" type="number" min="15" step="5" value="${esc(s?.duration || 60)}"></label></div>
       <div class="g2"><label>Repeat<select name="weeks">${[1, 2, 4, 8, 12, 24, 52].map((n) => `<option value="${n}" ${+(s?.weeks || 1) === n ? "selected" : ""}>${n === 1 ? "Just once" : `Every week × ${n}`}</option>`).join("")}</select></label>
-        <label>Who can see it<select name="audience"><option value="all" ${s?.audience !== "private" ? "selected" : ""}>All students (on the portal)</option>
-          <option value="private" ${s?.audience === "private" ? "selected" : ""}>Private — only people I send the link to</option></select></label></div>
-      <label>Zoom or Microsoft Teams meeting link<input name="link" type="url" required value="${esc(s?.link || "")}" placeholder="https://us05web.zoom.us/j/…  or  https://teams.microsoft.com/l/meetup-join/…"></label>
+        <label>Who is this class for<select name="who">
+          ${(vault.students || []).map((st) => `<option value="student:${esc(st.id)}" ${s?.audience === "student" && s?.studentId === st.id ? "selected" : ""}>${esc(st.name)}</option>`).join("")}
+          <option value="all" ${s?.audience === "all" ? "selected" : ""}>All my students (group class)</option>
+          <option value="private" ${s && s.audience === "private" ? "selected" : ""}>Only people I send the class link to</option></select></label></div>
+        ${(vault.students || []).length ? "" : `<p class="muted">Tip: add students in the 👩‍🎓 Students tab to give each one a personal page.</p>`}
+      <label>Class link — Zoom, Teams, Google Meet or WhatsApp<input name="link" type="url" required value="${esc(s?.link || "")}" placeholder="https://meet.google.com/…  ·  https://teams.microsoft.com/…  ·  https://…zoom.us/j/…  ·  https://call.whatsapp.com/…"></label>
       <div class="g2"><label>Meeting ID (optional)<input name="meetingId" value="${esc(s?.meetingId || "")}"></label>
         <label>Passcode (optional)<input name="passcode" value="${esc(s?.passcode || "")}"></label></div>
       <label>Notes for students (optional)<textarea name="notes" placeholder="e.g. Please keep your shruti box ready">${esc(s?.notes || "")}</textarea></label>
@@ -162,9 +230,9 @@
     $("[data-back]", v).onclick = () => main();
     $("form", v).onsubmit = async (e) => {
       e.preventDefault(); const f = e.target;
-      if (!CC.validLink(f.link.value)) { $("[data-e]", v).textContent = "Please paste a Zoom (zoom.us) or Microsoft Teams (teams.microsoft.com / teams.live.com) meeting link."; return; }
+      if (!CC.validLink(f.link.value)) { $("[data-e]", v).textContent = "Please paste a Zoom, Microsoft Teams, Google Meet or WhatsApp (call.whatsapp.com / chat.whatsapp.com / wa.me) link."; return; }
       const rec = { title: f.title.value.trim(), start: new Date(`${f.date.value}T${f.time.value}:00+05:30`).toISOString(), duration: +f.duration.value || 60,
-        weeks: +f.weeks.value || 1, audience: f.audience.value, link: f.link.value.trim(), meetingId: f.meetingId.value.trim(), passcode: f.passcode.value.trim(), notes: f.notes.value.trim() };
+        weeks: +f.weeks.value || 1, audience: f.who.value.startsWith("student:") ? "student" : f.who.value, studentId: f.who.value.startsWith("student:") ? f.who.value.slice(8) : undefined, link: f.link.value.trim(), meetingId: f.meetingId.value.trim(), passcode: f.passcode.value.trim(), notes: f.notes.value.trim() };
       if (s) Object.assign(s, rec); else vault.sessions.push({ id: CC.randomId(), key: CC.randomKey(), ...rec });
       $$("button", f).forEach((b) => (b.disabled = true));
       if (await save(s ? "Update class" : "Schedule class")) { tab = "classes"; main(); } else $$("button", f).forEach((b) => (b.disabled = false));
@@ -194,6 +262,44 @@
         vault.availability = rows.filter((r) => r.day && r.from && r.to);
         vault.note = $("[data-note]", v).value.trim();
         e.target.disabled = true; await save("Update availability"); e.target.disabled = false;
+      };
+    };
+    draw();
+  }
+
+  function viewFees(v) {
+    // First time: start from the plans that were in the public settings (so nothing is lost)
+    if (!vault.plans) vault.plans = ((site.classes && site.classes.plans) || []).map((p) => ({ name: p.name || "", detail: p.detail || "", priceINR: p.priceINR || "", priceUSD: p.priceUSD || "", payLink: p.payLink || "" }));
+    vault.payment ||= {};
+    const rows = vault.plans.map((p) => ({ ...p }));
+    const draw = () => {
+      v.innerHTML = `<div class="card"><h3>Fees & plans</h3><p class="muted">Only invited students see these (in their portal). Leave a price or link empty and it simply isn't shown.</p>
+        <label>Short introduction for students (optional)<textarea data-intro placeholder="e.g. Live one-to-one and small-group lessons on Zoom…">${esc(vault.intro || "")}</textarea></label>
+        <div data-rows style="display:grid;gap:10px"></div><div class="row"><button class="b g" data-add>+ Add a plan</button></div></div>
+        <div class="card"><h3>Free payment by UPI (optional)</h3>
+          <p class="muted">No fees, no sign-up: students scan a QR code or tap "Pay with UPI"; the amount fills in automatically. Money goes straight to your bank. Leave empty to hide.</p>
+          <div class="g2"><label>Your UPI ID<input data-upi placeholder="e.g. vilasini@okicici" value="${esc(vault.payment.upiId || "")}"></label>
+            <label>Name shown to students<input data-upiname value="${esc(vault.payment.upiName || "")}" placeholder="S.M. Vilasini"></label></div>
+          <label>Payment note (optional)<input data-paynote value="${esc(vault.payment.note || "")}" placeholder="e.g. Please WhatsApp the payment screenshot to confirm your slot"></label></div>
+        <div class="row"><button class="b" data-save>Save fees & payment</button></div>`;
+      const R = $("[data-rows]", v);
+      rows.forEach((r, i) => {
+        const d = document.createElement("div"); d.className = "card"; d.style.background = "#fdfbf8";
+        d.innerHTML = `<div class="g2"><label>Plan name<input data-k="name" value="${esc(r.name)}" placeholder="e.g. Monthly — 1:1"></label>
+          <label>Details<input data-k="detail" value="${esc(r.detail)}" placeholder="e.g. 4 × 45 min, personalised"></label></div>
+          <div class="g3"><label>Fee in ₹<input data-k="priceINR" type="number" value="${esc(r.priceINR)}"></label><label>Fee in $ (optional)<input data-k="priceUSD" type="number" value="${esc(r.priceUSD)}"></label>
+          <label>Razorpay / payment link (optional)<input data-k="payLink" value="${esc(r.payLink)}" placeholder="https://rzp.io/…"></label></div>
+          <div class="row"><button class="b g" data-del>Remove plan</button></div>`;
+        $$("[data-k]", d).forEach((inp) => (inp.oninput = () => (r[inp.dataset.k] = inp.value)));
+        $("[data-del]", d).onclick = () => { rows.splice(i, 1); draw(); };
+        R.appendChild(d);
+      });
+      $("[data-add]", v).onclick = () => { rows.push({ name: "", detail: "", priceINR: "", priceUSD: "", payLink: "" }); draw(); };
+      $("[data-save]", v).onclick = async (e) => {
+        vault.plans = rows.filter((r) => r.name.trim());
+        vault.intro = $("[data-intro]", v).value.trim();
+        vault.payment = { upiId: $("[data-upi]", v).value.trim(), upiName: $("[data-upiname]", v).value.trim(), note: $("[data-paynote]", v).value.trim() };
+        e.target.disabled = true; await save("Update class fees"); e.target.disabled = false;
       };
     };
     draw();

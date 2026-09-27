@@ -59,17 +59,42 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
   const fmtDay = (d) => new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(d);
 
   // Link looks like  students.html#p.<portalKey>   or   students.html#c.<classId>.<classKey>
+  // The first time a student opens their link, this browser remembers it — they never need the link again.
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }, del: (k) => { try { localStorage.removeItem(k); } catch {} } };
   const h = decodeURIComponent(location.hash.slice(1));
-  const fail = (t) => { app.innerHTML = `<div class="center"><h2>Link not valid</h2><p class="muted">${esc(t)}</p></div>`; };
-  let mode, data;
-  try {
-    if (h.startsWith("p.")) { mode = "portal"; if (!S.classPortal) throw 0; data = await CC.unlock(S.classPortal, h.slice(2)); }
-    else if (h.startsWith("c.")) { mode = "class"; const [, id, ...k] = h.split("."); const rec = (S.classInvites || {})[id]; if (!rec) throw 0; data = await CC.unlock(rec, k.join(".")); }
-    else throw 0;
-  } catch { return fail("This link is incomplete, has been reset, or the class was removed. Please ask your teacher for a new link."); }
+  const fail = (t) => { app.innerHTML = `<div class="center"><h2>Classes are by invitation</h2><p class="muted">${esc(t)}</p><p><a class="btn" href="./#contact">Contact the teacher</a></p></div>`; };
+  let invites = {}; try { invites = JSON.parse(store.get("student-invites") || "{}"); } catch {}
+  let portalKey = store.get("student-portal"), fromLink = false;
+  if (h.startsWith("p.")) { portalKey = h.slice(2); fromLink = true; }
+  if (h.startsWith("c.")) { const [, id, ...k] = h.split("."); invites[id] = k.join("."); }
+  let self = null; try { self = JSON.parse(store.get("student-self") || "null"); } catch {}
+  if (h.startsWith("s.")) { const [, id, ...k] = h.split("."); self = { id, key: k.join(".") }; }
+  let me = null;
+  if (self && (S.classStudents || {})[self.id]) { try { me = await CC.unlock(S.classStudents[self.id], self.key); store.set("student-self", JSON.stringify(self)); } catch { store.del("student-self"); } }
+  else if (self) store.del("student-self");
+  let portal = null, expired = false;
+  if (portalKey && S.classPortal) {
+    try { portal = await CC.unlock(S.classPortal, portalKey); store.set("student-portal", portalKey); }
+    catch { if (fromLink) expired = true; else { store.del("student-portal"); expired = true; } }
+  }
+  const privateSessions = [];
+  for (const [id, key] of Object.entries(invites)) {
+    const rec = (S.classInvites || {})[id];
+    if (!rec) { delete invites[id]; continue; }
+    try { privateSessions.push(await CC.unlock(rec, key)); } catch { delete invites[id]; }
+  }
+  if (Object.keys(invites).length) store.set("student-invites", JSON.stringify(invites)); else store.del("student-invites");
+  if (h) history.replaceState(null, "", location.pathname);   // tidy address bar; access is remembered
+  if (!me && !portal && !privateSessions.length) return fail(expired || (self && !me)
+    ? "Your access link has been reset. Please ask your teacher for the new link."
+    : "Open the invitation link your teacher sent you. After that, this page remembers you.");
+  const mode = me || portal ? "portal" : "class";
+  const data = me || portal || privateSessions[0];
+  const info = me || portal;   // fees, availability and "not available" times
 
   const teacher = data.teacher || "Your teacher";
-  const sessions = mode === "portal" ? (data.sessions || []) : [data];
+  const seenIds = new Set();
+  const sessions = [...(me ? me.sessions || [] : []), ...(portal ? portal.sessions || [] : []), ...privateSessions].filter((x) => x && !seenIds.has(x.id) && seenIds.add(x.id));
   const now = new Date();
   const upcoming = sessions.map((s) => ({ s, next: CC.nextOccurrence(s, now) })).filter((x) => x.next).sort((a, b) => a.next - b.next);
 
@@ -106,29 +131,74 @@ input,select,textarea{font:inherit;color:var(--text);background:#fff;border:1px 
     const base = Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate() + add, hh, mm) - 5.5 * 36e5;
     return new Date(base < Date.now() ? base + 7 * 864e5 : base);
   };
-  const slots = (data.availability || []).map((a) => ({ a, start: nextIST(a.day, a.from), end: nextIST(a.day, a.to) }))
-    .map((x) => (x.end <= x.start ? { ...x, end: new Date(x.end.getTime() + 7 * 864e5) } : x)).sort((x, y) => x.start - y.start);
+  // Next 2 weeks of her weekly slots; any slot overlapping another student's class shows "Not available" (no details)
+  const istHM = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
+  const istT = (d) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
+  const busy = ((info && info.busy) || []).map((x) => [new Date(x.s).getTime(), new Date(x.e).getTime()]);
+  const mine = sessions.flatMap((x) => CC.occurrences(x).map((d) => [d.getTime(), d.getTime() + (+x.duration || 60) * 6e4]));
+  const slots = [];
+  for (const a of (info && info.availability) || []) {
+    let st = nextIST(a.day, a.from), en = nextIST(a.day, a.to); if (en <= st) en = new Date(en.getTime() + 7 * 864e5);
+    for (let w = 0; w < 2; w++) {
+      const s0 = st.getTime() + w * 7 * 864e5, e0 = en.getTime() + w * 7 * 864e5;
+      // cut the slot at every class boundary, then label each piece
+      const cuts = new Set([s0, e0]);
+      [...busy, ...mine].forEach(([bs, be]) => { if (bs > s0 && bs < e0) cuts.add(bs); if (be > s0 && be < e0) cuts.add(be); });
+      const pts = [...cuts].sort((x, y) => x - y);
+      let prev = null;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const ps = pts[i], pe = pts[i + 1];
+        const state = mine.some(([bs, be]) => bs < pe && be > ps) ? "mine" : busy.some(([bs, be]) => bs < pe && be > ps) ? "taken" : "free";
+        if (prev && prev.state === state && prev.end.getTime() === ps) prev.end = new Date(pe);
+        else slots.push(prev = { a, start: new Date(ps), end: new Date(pe), state, taken: state === "taken" });
+      }
+    }
+  }
+  slots.sort((x, y) => x.start - y.start);
 
+  const upiLink = (amt, note) => `upi://pay?pa=${encodeURIComponent(info.upiId)}&pn=${encodeURIComponent(info.upiName || teacher)}&am=${encodeURIComponent(amt)}&cu=INR&tn=${encodeURIComponent(("Class fee " + (note || "")).slice(0, 50))}`;
   const contact = (text) => data.whatsapp ? `https://wa.me/${data.whatsapp}?text=${encodeURIComponent(text)}` : `mailto:${data.email}?subject=${encodeURIComponent("Class request")}&body=${encodeURIComponent(text)}`;
 
   app.innerHTML = `<header><div class="wrap">${data.photo ? `<img class="avatar" src="${esc(data.photo)}" alt="" onerror="this.remove()">` : ""}
       <div><div class="eyebrow">${mode === "portal" ? "Student portal" : "Class invitation"}</div><h1>${esc(teacher)}</h1>
-      <p>${mode === "portal" ? "Your classes, join links and my availability" : "You're invited to a live online class"}</p></div></div></header>
+      <p>${me ? `Welcome, ${esc(me.studentName)} — your classes, join links and my availability` : mode === "portal" ? "Your classes, join links and my availability" : "You're invited to a live online class"}</p></div></div></header>
     <main class="wrap">
-      ${data.note && mode === "portal" ? `<div class="note">${esc(data.note)}</div>` : ""}
+      ${info && info.note ? `<div class="note">${esc(info.note)}</div>` : ""}
       <section style="display:grid;gap:12px"><h2>${mode === "portal" ? "Upcoming classes" : "Your class"}</h2>
         ${upcoming.length ? upcoming.map(classCard).join("") : `<div class="card"><p class="muted">${mode === "portal" ? "No classes scheduled right now — request one below." : "This class has finished. Please ask for a new link."}</p></div>`}
         <p class="tz">Times are shown in your time zone: <b>${esc(tz)}</b>.</p></section>
+      ${info && ((info.plans || []).length || info.upiId) ? `<section style="display:grid;gap:12px"><h2>Fees & payment</h2>
+        ${info.intro ? `<p style="margin:0">${esc(info.intro)}</p>` : ""}
+        ${(info.plans || []).map((p, i) => `<div class="card"><div class="row" style="justify-content:space-between"><h3>${esc(p.name)}</h3>
+            <div class="cls__when">${[p.priceINR ? "₹" + Number(p.priceINR).toLocaleString("en-IN") : "", p.priceUSD ? "$" + esc(p.priceUSD) : ""].filter(Boolean).join(" · ")}</div></div>
+          ${p.detail ? `<p class="muted">${esc(p.detail)}</p>` : ""}
+          <div class="row">${info.upiId && p.priceINR ? `<a class="btn" href="${esc(upiLink(p.priceINR, p.name))}">Pay with UPI</a><button class="btn btn--ghost" data-qr="${i}">Show UPI QR code</button>` : ""}
+            ${p.payLink ? `<a class="btn ${info.upiId ? "btn--ghost" : ""}" href="${esc(p.payLink)}" target="_blank" rel="noopener">Pay online (card / international)</a>` : ""}</div>
+          <div data-qr-box="${i}" hidden style="text-align:center"></div></div>`).join("")}
+        ${info.upiId ? `<p class="muted">UPI: <b>${esc(info.upiId)}</b>${info.upiName ? " · " + esc(info.upiName) : ""}. Works with GPay, PhonePe, Paytm and any UPI app.${info.payNote ? " " + esc(info.payNote) : ""}</p>` : info.payNote ? `<p class="muted">${esc(info.payNote)}</p>` : ""}
+      </section>` : ""}
       ${mode === "portal" ? `<section style="display:grid;gap:12px"><h2>My availability</h2>
-        ${slots.length ? `<div class="slots">${slots.map(({ a, start, end }) => `<div class="slot"><div><b>${esc(fmtDay(start))}</b> · ${esc(fmtTime(start))} – ${esc(fmtTime(end))}
-          <div class="meta">${esc(a.day)} ${esc(a.from)}–${esc(a.to)} India time</div></div>
-          <a class="btn btn--ghost" href="${esc(contact(`Namaste! I'd like to book a class on ${fmtDay(start)} ${fmtTime(start)} (my time) / ${a.day} ${a.from} IST.`))}" target="_blank" rel="noopener">Request this slot</a></div>`).join("")}</div>`
+        ${slots.length ? `<div class="slots">${slots.map(({ a, start, end, taken, state }) => `<div class="slot" ${taken ? 'style="opacity:.6"' : state === "mine" ? 'style="border-color:#9c2f24"' : ""}><div><b>${esc(fmtDay(start))} ${esc(new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(start))}</b> · ${esc(fmtTime(start))} – ${esc(fmtTime(end))}
+          <div class="meta">${esc(istHM(start))}–${esc(istT(end))} India time</div></div>
+          ${taken ? `<span class="meta" style="font-weight:600">Not available</span>` : state === "mine" ? `<span class="meta" style="font-weight:600;color:#9c2f24">Your class</span>` : `<a class="btn btn--ghost" href="${esc(contact(`Namaste! I'd like to book a class on ${fmtDay(start)} ${fmtTime(start)} (my time) / ${istHM(start)} IST.`))}" target="_blank" rel="noopener">Request this slot</a>`}</div>`).join("")}</div>`
           : `<div class="card"><p class="muted">Availability will be shared soon.</p></div>`}
         <div class="card"><h3>Request a class</h3>
           <form data-req><div class="row" style="gap:10px"><label style="flex:1 1 200px">Your name<input name="n" required></label><label style="flex:1 1 200px">Preferred time<input name="t" placeholder="e.g. Saturdays 10am my time"></label></div>
           <label>Message<textarea name="m" rows="3" placeholder="Your level, what you'd like to learn…"></textarea></label>
           <div class="row"><button class="btn ${data.whatsapp ? "btn--wa" : ""}">${data.whatsapp ? "Send on WhatsApp" : "Send by email"}</button></div></form></div></section>` : ""}
+      <p class="tz" style="text-align:center">This device remembers your access. <a href="#" data-forget>Forget this device</a></p>
     </main>`;
+  document.querySelector("[data-forget]").onclick = (e) => { e.preventDefault(); if (confirm("Remove class access from this device?")) { store.del("student-portal"); store.del("student-invites"); location.reload(); } };
+  document.querySelectorAll("[data-qr]").forEach((b) => b.onclick = async () => {
+    const i = +b.dataset.qr, p = info.plans[i], box = document.querySelector(`[data-qr-box="${i}"]`);
+    if (!box.hidden) { box.hidden = true; return; }
+    box.hidden = false; box.innerHTML = "<p class='muted'>Loading QR…</p>";
+    try {
+      if (!window.qrcode) await new Promise((ok, no) => { const t = document.createElement("script"); t.src = "vendor/qrcode.js"; t.onload = ok; t.onerror = no; document.head.appendChild(t); });
+      const q = window.qrcode(0, "M"); q.addData(upiLink(p.priceINR, p.name)); q.make();
+      box.innerHTML = `<img src="${q.createDataURL(6, 12)}" alt="UPI QR code" style="max-width:240px;width:100%"><p class="muted">Scan with any UPI app · ₹${Number(p.priceINR).toLocaleString("en-IN")}</p>`;
+    } catch { box.innerHTML = `<p class="muted">Couldn't load the QR code — pay to UPI ID <b>${esc(info.upiId)}</b>.</p>`; }
+  });
   const req = document.querySelector("[data-req]");
   if (req) req.onsubmit = (e) => { e.preventDefault(); const f = e.target;
     window.open(contact(`Namaste! I'm ${f.n.value}.${f.t.value ? " Preferred time: " + f.t.value + " (" + tz + ")." : ""} ${f.m.value}`.trim()), "_blank"); };

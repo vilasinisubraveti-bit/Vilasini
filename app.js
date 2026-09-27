@@ -115,8 +115,7 @@
     const idx = evs.indexOf(e);
     const place = placeText(e), when = whenText(e), artists = artistLines(e);
     const more = e.description && e.description.length;
-    return `<article class="event ${isPast ? "event--past" : ""} ${e.image ? "event--img" : ""} reveal" ${e.code ? `data-code="${esc(e.code)}"` : ""}>
-      ${e.image ? `<button class="event__pic" data-event-more="${idx}" aria-label="Open"><img src="${esc(e.image)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></button>` : ""}
+    return `<article class="event ${isPast ? "event--past" : ""} reveal" ${e.code ? `data-code="${esc(e.code)}"` : ""}>
       <div class="event__date"><div class="event__day">${e.day}</div><div class="event__mon">${MON[e.m - 1]} ${e.y}</div></div>
       <div><span class="event__type">${esc(e.type || "Concert")}</span><h3>${esc(e.title)}</h3>
         ${when || place ? `<div class="event__where">${[when, esc(place)].filter(Boolean).join(" · ")}</div>` : ""}
@@ -124,7 +123,7 @@
         ${e.note ? `<p class="muted" style="margin:6px 0 0">${esc(e.note)}</p>` : ""}</div>
       <div class="event__actions">${!isPast ? `<button class="btn btn--ghost btn--small" data-ics="${idx}">+ Calendar</button>` : ""}
         ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}
-        ${more || e.image ? `<button class="btn btn--ghost btn--small" data-event-more="${idx}">${more ? "Read more" : "View"}</button>` : ""}</div>
+        ${more ? `<button class="btn btn--ghost btn--small" data-event-more="${idx}">Read more</button>` : ""}</div>
     </article>`;
   };
   document.addEventListener("click", (ev) => {
@@ -133,7 +132,6 @@
     const rows = [["Date", `${e.day} ${MON[e.m - 1]} ${e.y}`], ["Time", whenText(e)], ["Venue", e.venue], ["Place", e.address || e.city],
       ...ARTISTS.map(([k, l]) => [l, e[k]])].filter(([, v]) => v && String(v).trim());
     openModal(`<article class="reader"><p class="eyebrow">${esc(e.type || "Concert")}</p><h2>${esc(e.title)}</h2>
-      ${e.image ? `<img src="${esc(e.image)}" alt="" style="width:100%;border-radius:12px;margin:10px 0 18px">` : ""}
       <dl class="event-facts">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       ${(e.description || []).map((t) => `<p>${esc(t)}</p>`).join("")}</article>`);
   });
@@ -177,7 +175,7 @@
     const FIELDS = ["venue", "address", "city", "time", "endTime", "violin", "mridangam", "ghatam", "others", "link", "linkLabel"];
     const pick = (o) => Object.fromEntries(FIELDS.filter((k) => o[k]).map((k) => [k, o[k]]));
     const igEv = igItems(ig, "concert").flatMap((x) => (x.events && x.events.length ? x.events : [{}]).map((sub) => ({
-      type: "Concert", code: x.events && x.events.length ? "" : x.code, image: x.image, ...pick(x), ...pick(sub),
+      type: "Concert", code: x.events && x.events.length ? "" : x.code, ...pick(x), ...pick(sub),
       title: sub.title || x.title, date: sub.date || x.date, description: sub.description || x.description })));
     showEvents([...manualEvents, ...calEv, ...igEv]);
   });
@@ -260,7 +258,14 @@
   /* ---------- classes (switch in content.js) ---------- */
   const C = S.classes || {};
   const preview = params.get("preview") === "classes";
-  if (C.enabled || preview) {
+  // Classes are by invitation only: fees & schedule live in the private student portal (students.html).
+  // Invited students' browsers remember their access, so a "My classes" link appears for them (and for the owner).
+  let hasPortal = false; try { hasPortal = !!(localStorage.getItem("student-portal") || localStorage.getItem("student-invites") || localStorage.getItem("student-self") || localStorage.getItem("editor-token")); } catch {}
+  if (hasPortal) {
+    const link = $("[data-classes-link]"); link.href = "students.html"; link.textContent = "My classes"; link.hidden = false;
+    const cta = $("[data-classes-cta]"); cta.href = "students.html"; cta.textContent = "My classes"; cta.hidden = false;
+  }
+  if (C.public === true || preview) {
     $("[data-classes]").hidden = false;
     $$("[data-classes-link],[data-classes-cta]").forEach((el) => (el.hidden = false));
     $("[data-contact-cta]").hidden = true;

@@ -146,17 +146,6 @@ textarea{min-height:90px;resize:vertical}
       T("description", "Full write-up", { type: "paragraphs", help: "As long as you like. Blank line = new paragraph." }),
       T("image", "Photo (optional)", { type: "image", folder: "assets/awards", help: "Upload a certificate, ceremony or trophy photo — or paste a picture link." }),
       T("link", "Link to news / more info (optional)"), T("video", "YouTube link of the ceremony (optional)", { video: false }) ] } },
-    { title: "Online classes", hint: "Switch on/off, prices, payment links", fields: [
-      T("classes.enabled", "Show classes on the website", { type: "check" }),
-      T("classes.inviteOnly", "Invite-only (students need the access code)", { type: "check" }),
-      T("classes.accessCode", "Access code"), T("classes.platform", "Platform", { help: "Zoom or Google Meet" }),
-      T("classes.intro", "Introduction", { type: "textarea" }) ],
-      list: { path: "classes.plans", add: "Add plan", title: (x) => x.name, item: [
-        T("name", "Plan name"), T("detail", "Details", { help: "e.g. 4 × 45 min · one-to-one" }),
-        T("priceINR", "Price in ₹", { type: "number" }), T("priceUSD", "Price in $", { type: "number" }),
-        T("payLink", "Razorpay payment link (₹)"), T("payLinkUSD", "Payment link for $ (optional)"),
-        T("featured", "Highlight as most popular", { type: "check" }) ] },
-      list2: { path: "classes.steps", add: "Add step", label: "How it works (steps)", string: true } },
     { title: "Articles", hint: "Write or link articles", list: { path: "articles", add: "Add article", title: (x) => x.title, newFirst: true, item: [
       T("title", "Title"), T("date", "Date", { type: "date" }), T("tag", "Tag", { help: "e.g. Practice" }), T("readTime", "Read time", { help: "e.g. 4 min" }),
       T("excerpt", "Short summary", { type: "textarea" }), T("body", "Full article", { type: "paragraphs", help: "Leave a blank line between paragraphs." }),
@@ -177,7 +166,7 @@ textarea{min-height:90px;resize:vertical}
       T("venue", "Venue"), T("address", "Address / place"),
       T("violin", "Violin"), T("mridangam", "Mridangam"), T("ghatam", "Ghatam"), T("others", "Others (e.g. Kanjira, Veena, tanpura)"),
       T("description", "Write-up", { type: "paragraphs", help: "Blank line = new paragraph." }),
-      T("image", "Picture", { type: "image", folder: "assets/instagram" }) ] },
+      T("image", "Picture (shown only for chief guest / honours)", { type: "image", folder: "assets/instagram" }) ] },
       list2: { path: "instagramHidden", add: "Hide a post", label: "Hidden posts (links)", string: true } },
     { title: "What people say", hint: "Testimonials", list: { path: "testimonials", add: "Add testimonial", title: (x) => x.name, item: [
       T("quote", "Quote", { type: "textarea" }), T("name", "Name"), T("place", "Place") ] } },
@@ -203,7 +192,7 @@ textarea{min-height:90px;resize:vertical}
       T("venue", "Venue"), T("address", "Address / place"),
       T("violin", "Violin"), T("mridangam", "Mridangam"), T("ghatam", "Ghatam"), T("others", "Others (e.g. Kanjira, Veena, tanpura)"),
       T("link", "Tickets / details link (optional)"), T("linkLabel", "Button text", { help: "e.g. Get tickets" }), T("note", "Short note (optional)", { type: "textarea" }),
-      T("description", "Write-up (optional)", { type: "paragraphs" }), T("image", "Picture / poster (optional)", { type: "image", folder: "assets/concerts" }) ] } },
+      T("description", "Write-up (optional)", { type: "paragraphs" }) ] } },
     { title: "YouTube", hint: "Channel & hand-picked videos", fields: [
       T("youtubeChannelId", "Channel handle", { help: "e.g. @Vilzbuzz — latest uploads appear automatically" }),
       T("autoVideoCategory", "Label for automatic videos") ],

@@ -21,8 +21,8 @@ window.ClassCrypto = (() => {
   }
   const randomKey = () => b64(crypto.getRandomValues(new Uint8Array(18))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const randomId = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
-  const validLink = (u) => /^https:\/\/([\w-]+\.)*(zoom\.us|zoom\.com|teams\.microsoft\.com|teams\.live\.com)\//i.test(String(u || "").trim());
-  const platformOf = (u) => /teams\./i.test(u) ? "Microsoft Teams" : "Zoom";
+  const validLink = (u) => /^https:\/\/([\w-]+\.)*(zoom\.us|zoom\.com|teams\.microsoft\.com|teams\.live\.com|meet\.google\.com|call\.whatsapp\.com|chat\.whatsapp\.com|wa\.me)\//i.test(String(u || "").trim());
+  const platformOf = (u) => /teams\./i.test(u) ? "Microsoft Teams" : /meet\.google/i.test(u) ? "Google Meet" : /whatsapp|wa\.me/i.test(u) ? "WhatsApp" : "Zoom";
   // All dates of a (possibly weekly) class
   const occurrences = (c) => Array.from({ length: Math.max(1, +c.weeks || 1) }, (_, k) => new Date(new Date(c.start).getTime() + k * 7 * 864e5));
   const nextOccurrence = (c, now = new Date()) => occurrences(c).find((d) => d.getTime() + (+c.duration || 60) * 6e4 > now.getTime()) || null;
