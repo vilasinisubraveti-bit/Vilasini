@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Website Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbf7f1;--card:#fff;--line:#e7dccb;--text:#2b211b;--muted:#6e6152;--accent:#9c2f24;--ok:#2f7a3e;--r:14px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+.top{position:sticky;top:0;z-index:10;background:rgba(251,247,241,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .in{max-width:860px;margin:0 auto;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top h1{font-size:1.2rem;flex:1}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 120px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:.65em 1.2em;font:600 .92rem Inter,sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn--ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn--sm{padding:.35em .8em;font-size:.8rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.card>summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:center;gap:10px}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary h2{font-size:1.15rem;flex:1}
+.card>summary .hint{color:var(--muted);font-size:.85rem}
+.card>summary::after{content:"▾";color:var(--muted);transition:transform .2s}
+.card[open]>summary::after{transform:rotate(180deg)}
+.body{padding:0 18px 18px;display:grid;gap:14px}
+label{display:grid;gap:5px;font-size:.85rem;color:var(--muted);font-weight:500}
+input,textarea,select{font:inherit;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:10px;padding:.65em .8em;width:100%}
+input:focus,textarea:focus,select:focus{outline:2px solid rgba(156,47,36,.25);border-color:var(--accent)}
+textarea{min-height:90px;resize:vertical}
+.check{display:flex;align-items:center;gap:10px;color:var(--text);font-size:.95rem}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.item{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;background:#fdfbf8}
+.item__bar{display:flex;gap:6px;align-items:center}
+.item__bar b{flex:1;font-size:.9rem}
+.icon{background:#fff;border:1px solid var(--line);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:.9rem}
+.icon--del{color:var(--accent)}
+.help{font-size:.82rem;color:var(--muted);margin:-6px 0 0}
+.status{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:#fff;padding:12px 18px;border-radius:12px;font-size:.92rem;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:20}
+.status.ok{background:var(--ok)}.status.err{background:var(--accent)}
+.login{max-width:520px;margin:40px auto;padding:0 16px}
+.login .card{padding:24px}
+.login ol{padding-left:20px;color:var(--muted);font-size:.9rem}
+.photo{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.photo img{width:110px;height:138px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#f1e2cc}
+.dirty{display:none;font-size:.82rem;color:var(--accent)}
+.is-dirty .dirty{display:inline}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Sign-in -->
+<section class="login" data-login hidden>
+  <div class="card">
+    <h1 style="margin-bottom:6px">Website editor</h1>
+    <p style="color:var(--muted);margin-top:0">Paste your editor key to start. You only need to do this once on each device.</p>
+    <form data-login-form style="display:grid;gap:12px">
+      <label>Editor key<input name="token" type="password" placeholder="github_pat_…" autocomplete="off" required></label>
+      <label class="check"><input type="checkbox" name="remember" checked> Remember on this device</label>
+      <button class="btn">Open editor</button>
+      <p class="help" data-login-msg></p>
+    </form>
+    <details style="margin-top:14px"><summary style="cursor:pointer;color:var(--accent)">How do I get an editor key?</summary>
+      <ol>
+        <li>Sign in to <b>github.com</b> and go to <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b>.</li>
+        <li>Click <b>Generate new token</b>. Name: <i>Website editor</i>. Expiration: the longest available.</li>
+        <li>Repository access: <b>Only select repositories → Vilasini</b>.</li>
+        <li>Permissions → Repository permissions → <b>Contents: Read and write</b>.</li>
+        <li>Click <b>Generate token</b>, copy it and paste it above.</li>
+      </ol>
+    </details>
+  </div>
+</section>
+
+<!-- Editor -->
+<div data-editor hidden>
+  <header class="top"><div class="in">
+    <h1>Website editor <span class="dirty">• unsaved changes</span></h1>
+    <a class="btn btn--ghost btn--sm" data-view target="_blank" rel="noopener">View site ↗</a>
+    <button class="btn btn--ghost btn--sm" data-signout>Sign out</button>
+    <button class="btn" data-save>Save changes</button>
+  </div></header>
+  <main class="wrap" data-form></main>
+</div>
+
+<div class="status" data-status hidden></div>
+
+<script>
+(() => {
+  /* ---------- where the site lives (auto-detected on GitHub Pages) ---------- */
+  const host = location.hostname.match(/^([^.]+)\.github\.io$/i);
+  const OWNER = host ? host[1] : "vilasinisubraveti-bit";
+  const REPO = host ? (location.pathname.split("/").filter(Boolean)[0] || `${OWNER}.github.io`) : "Vilasini";
+  const BRANCH = "main";
+  const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+  const SITE_URL = host ? location.href.replace(/admin\.html.*$/, "") : `https://${OWNER}.github.io/${REPO}/`;
+
+  const $ = (s, r = document) => r.querySelector(s);
+  let token = "", data = null, sha = null, dirty = false;
+
+  /* ---------- helpers ---------- */
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+                  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+                  del: (k) => { try { localStorage.removeItem(k); } catch {} } };
+  const b64encode = (str) => { const bytes = new TextEncoder().encode(str); let bin = ""; bytes.forEach((b) => (bin += String.fromCharCode(b))); return btoa(bin); };
+  const b64decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
+  const getPath = (obj, path) => path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
+  const setPath = (obj, path, val) => { const ks = path.split("."); const last = ks.pop(); const t = ks.reduce((o, k) => (o[k] ??= {}), obj); t[last] = val; };
+  let statusTimer;
+  const status = (msg, kind = "", ms = 4000) => {
+    const el = $("[data-status]"); el.textContent = msg; el.className = "status " + kind; el.hidden = false;
+    clearTimeout(statusTimer); if (ms) statusTimer = setTimeout(() => (el.hidden = true), ms);
+  };
+  const markDirty = () => { dirty = true; document.body.classList.add("is-dirty"); };
+  addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+  async function gh(path, opts = {}) {
+    const r = await fetch(API + path + (opts.method ? "" : `?ref=${BRANCH}&t=${Date.now()}`), {
+      ...opts, headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", ...(opts.headers || {}) } });
+    if (!r.ok) { const e = new Error((await r.json().catch(() => ({}))).message || r.statusText); e.status = r.status; throw e; }
+    return r.json();
+  }
+
+  /* ---------- what the editor shows ---------- */
+  const T = (path, label, extra = {}) => ({ path, label, type: "text", ...extra });
+  const SECTIONS = [
+    { title: "Profile", hint: "Name, tagline, bio", open: true, fields: [
+      { type: "photo", label: "Photo" },
+      T("artist.name", "Name"), T("artist.tagline", "Tagline", { help: "e.g. Carnatic Vocalist · Composer · Teacher" }),
+      T("artist.location", "Location"), T("artist.heroLine", "Headline sentence", { type: "textarea" }),
+      T("artist.bio", "About (bio)", { type: "paragraphs", help: "Leave a blank line between paragraphs." }) ] },
+    { title: "Highlights", hint: "Years of training, concerts…", open: true, list: { path: "artist.stats", add: "Add highlight",
+      item: [T("value", "Number", { help: "e.g. 20+" }), T("label", "Label", { help: "e.g. Years of training" })], title: (x) => `${x.value || ""} ${x.label || ""}` } },
+    { title: "Online classes", hint: "Switch on/off, prices, payment links", fields: [
+      T("classes.enabled", "Show classes on the website", { type: "check" }),
+      T("classes.inviteOnly", "Invite-only (students need the access code)", { type: "check" }),
+      T("classes.accessCode", "Access code"), T("classes.platform", "Platform", { help: "Zoom or Google Meet" }),
+      T("classes.intro", "Introduction", { type: "textarea" }) ],
+      list: { path: "classes.plans", add: "Add plan", title: (x) => x.name, item: [
+        T("name", "Plan name"), T("detail", "Details", { help: "e.g. 4 × 45 min · one-to-one" }),
+        T("priceINR", "Price in ₹", { type: "number" }), T("priceUSD", "Price in $", { type: "number" }),
+        T("payLink", "Razorpay payment link (₹)"), T("payLinkUSD", "Payment link for $ (optional)"),
+        T("featured", "Highlight as most popular", { type: "check" }) ] },
+      list2: { path: "classes.steps", add: "Add step", label: "How it works (steps)", string: true } },
+    { title: "Articles", hint: "Write or link articles", list: { path: "articles", add: "Add article", title: (x) => x.title, newFirst: true, item: [
+      T("title", "Title"), T("date", "Date", { type: "date" }), T("tag", "Tag", { help: "e.g. Practice" }), T("readTime", "Read time", { help: "e.g. 4 min" }),
+      T("excerpt", "Short summary", { type: "textarea" }), T("body", "Full article", { type: "paragraphs", help: "Leave a blank line between paragraphs." }),
+      T("url", "OR link to an article elsewhere (Medium, Substack…)") ] } },
+    { title: "What people say", hint: "Testimonials", list: { path: "testimonials", add: "Add testimonial", title: (x) => x.name, item: [
+      T("quote", "Quote", { type: "textarea" }), T("name", "Name"), T("place", "Place") ] } },
+    { title: "Featured in & collaborations", hint: "Names shown in a strip", list: { path: "featuredIn", add: "Add name", string: true } },
+    { title: "Contact & social links", hint: "Email, WhatsApp, Instagram…", fields: [
+      T("social.email", "Email"), T("social.whatsapp", "WhatsApp number", { help: "Country code + number, no + or spaces, e.g. 919876543210" }),
+      T("social.youtube", "YouTube link"), T("social.instagram", "Instagram link"), T("social.facebook", "Facebook link"), T("social.spotify", "Spotify link"),
+      T("contactFormKey", "Web3Forms key (contact form)") ] },
+    { title: "Extra announcements", hint: "Concerts come from Google Calendar — add extras here", list: { path: "announcements", add: "Add announcement", title: (x) => `${x.date || ""} ${x.title || ""}`, item: [
+      T("type", "Type", { type: "select", options: ["Concert", "Online", "Workshop", "Masterclass", "Festival", "Album", "Announcement", "New venture"] }),
+      T("title", "Title"), T("date", "Date", { type: "date" }), T("time", "Time (IST)", { type: "time" }),
+      T("venue", "Venue"), T("city", "City"), T("link", "Link"), T("linkLabel", "Button text", { help: "e.g. Get tickets" }), T("note", "Note", { type: "textarea" }) ] } },
+    { title: "YouTube", hint: "Channel & hand-picked videos", fields: [
+      T("youtubeChannelId", "Channel handle", { help: "e.g. @Vilzbuzz — latest uploads appear automatically" }),
+      T("autoVideoCategory", "Label for automatic videos") ],
+      list: { path: "videos", add: "Add hand-picked video", title: (x) => x.title, label: "Hand-picked videos (shown first)", item: [
+        T("id", "YouTube link or video ID", { video: true }), T("title", "Title"), T("category", "Category", { help: "e.g. Performance, Lessons, Originals" }),
+        T("featured", "Show large at the top of the home page", { type: "check" }) ] } }
+  ];
+
+  /* ---------- form builders ---------- */
+  function fieldEl(f, obj, onChange) {
+    const val = getPath(obj, f.path);
+    let wrap, input;
+    if (f.type === "check") {
+      wrap = document.createElement("label"); wrap.className = "check";
+      input = Object.assign(document.createElement("input"), { type: "checkbox", checked: !!val });
+      wrap.append(input, f.label);
+      input.addEventListener("change", () => { setPath(obj, f.path, input.checked); onChange(); });
+      return wrap;
+    }
+    wrap = document.createElement("label"); wrap.append(f.label);
+    if (f.type === "textarea" || f.type === "paragraphs") {
+      input = document.createElement("textarea");
+      input.value = f.type === "paragraphs" ? (Array.isArray(val) ? val.join("\n\n") : val || "") : val || "";
+      if (f.type === "paragraphs") input.style.minHeight = "160px";
+    } else if (f.type === "select") {
+      input = document.createElement("select");
+      f.options.forEach((o) => input.append(new Option(o, o)));
+      input.value = val || f.options[0];
+    } else {
+      input = Object.assign(document.createElement("input"), { type: f.type || "text", value: val ?? "" });
+    }
+    input.addEventListener("input", () => {
+      let v = input.value;
+      if (f.type === "paragraphs") v = v.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+      if (f.type === "number") v = v === "" ? "" : Number(v);
+      if (f.video) { const m = v.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/); if (m) { v = m[1]; input.value = v; } }
+      setPath(obj, f.path, v); onChange();
+    });
+    wrap.append(input);
+    if (f.help) { const h = document.createElement("p"); h.className = "help"; h.textContent = f.help; wrap.append(h); }
+    return wrap;
+  }
+
+  function listEl(cfg) {
+    const box = document.createElement("div"); box.style.cssText = "display:grid;gap:10px";
+    if (cfg.label) { const l = document.createElement("b"); l.textContent = cfg.label; l.style.marginTop = "6px"; box.append(l); }
+    const holder = document.createElement("div"); holder.style.cssText = "display:grid;gap:10px"; box.append(holder);
+    const arr = () => { let a = getPath(data, cfg.path); if (!Array.isArray(a)) { a = []; setPath(data, cfg.path, a); } return a; };
+    const draw = () => {
+      holder.innerHTML = "";
+      arr().forEach((it, i) => {
+        const item = document.createElement("div"); item.className = "item";
+        const bar = document.createElement("div"); bar.className = "item__bar";
+        const name = document.createElement("b");
+        const refreshName = () => (name.textContent = cfg.string ? `#${i + 1}` : (cfg.title && cfg.title(arr()[i])) || `Item ${i + 1}`);
+        refreshName();
+        const mk = (txt, title, fn, cls = "") => { const b = document.createElement("button"); b.type = "button"; b.className = "icon " + cls; b.textContent = txt; b.title = title; b.onclick = fn; return b; };
+        bar.append(name,
+          mk("↑", "Move up", () => { if (i > 0) { const a = arr(); [a[i - 1], a[i]] = [a[i], a[i - 1]]; markDirty(); draw(); } }),
+          mk("↓", "Move down", () => { const a = arr(); if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; markDirty(); draw(); } }),
+          mk("✕", "Remove", () => { if (confirm("Remove this item?")) { arr().splice(i, 1); markDirty(); draw(); } }, "icon--del"));
+        item.append(bar);
+        if (cfg.string) {
+          const holderObj = { v: it };
+          item.append(fieldEl({ path: "v", label: "", type: "text" }, holderObj, () => { arr()[i] = holderObj.v; markDirty(); refreshName(); }));
+        } else {
+          const g = document.createElement("div"); g.className = "grid2";
+          cfg.item.forEach((f) => {
+            const el = fieldEl(f, it, () => { markDirty(); refreshName(); });
+            if (["textarea", "paragraphs", "check"].includes(f.type)) el.style.gridColumn = "1/-1";
+            g.append(el);
+          });
+          item.append(g);
+        }
+        holder.append(item);
+      });
+    };
+    const add = document.createElement("button"); add.type = "button"; add.className = "btn btn--ghost btn--sm"; add.textContent = "+ " + cfg.add;
+    add.style.justifySelf = "start";
+    add.onclick = () => {
+      const blank = cfg.string ? "" : Object.fromEntries(cfg.item.map((f) => [f.path, f.type === "check" ? false : f.type === "paragraphs" ? [] : f.type === "select" ? f.options[0] : ""]));
+      cfg.newFirst ? arr().unshift(blank) : arr().push(blank); markDirty(); draw();
+    };
+    box.append(add); draw();
+    return box;
+  }
+
+  function photoEl() {
+    const wrap = document.createElement("div"); wrap.className = "photo";
+    const img = document.createElement("img"); img.alt = "Photo";
+    const src = data.artist?.photo;
+    if (src) img.src = SITE_URL + src;
+    img.onerror = () => (img.style.visibility = "hidden");
+    const right = document.createElement("div"); right.style.cssText = "display:grid;gap:6px";
+    const file = Object.assign(document.createElement("input"), { type: "file", accept: "image/*" });
+    const note = document.createElement("p"); note.className = "help"; note.textContent = "Choose a portrait photo. It is resized and uploaded when you pick it.";
+    file.onchange = async () => {
+      const f = file.files[0]; if (!f) return;
+      try {
+        status("Uploading photo…", "", 0);
+        const bmp = await createImageBitmap(f);
+        const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+        const c = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * scale), height: Math.round(bmp.height * scale) });
+        c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+        const dataUrl = c.toDataURL("image/jpeg", 0.85);
+        let oldSha; try { oldSha = (await gh("assets/portrait.jpg")).sha; } catch {}
+        await gh("assets/portrait.jpg", { method: "PUT", body: JSON.stringify({ message: "Update photo (website editor)", branch: BRANCH,
+          content: dataUrl.split(",")[1], ...(oldSha ? { sha: oldSha } : {}) }) });
+        img.src = dataUrl; img.style.visibility = "visible";
+        setPath(data, "artist.photo", `assets/portrait.jpg?v=${Date.now()}`); markDirty();
+        status("Photo uploaded — click Save changes to finish.", "ok");
+      } catch (e) { status("Photo upload failed: " + e.message, "err", 8000); }
+    };
+    right.append(file, note); wrap.append(img, right);
+    return wrap;
+  }
+
+  function render() {
+    const form = $("[data-form]"); form.innerHTML = "";
+    SECTIONS.forEach((s) => {
+      const card = document.createElement("details"); card.className = "card"; card.open = !!s.open;
+      card.innerHTML = `<summary><h2></h2><span class="hint"></span></summary>`;
+      card.querySelector("h2").textContent = s.title; card.querySelector(".hint").textContent = s.hint || "";
+      const body = document.createElement("div"); body.className = "body";
+      (s.fields || []).forEach((f) => body.append(f.type === "photo" ? photoEl() : fieldEl(f, data, markDirty)));
+      if (s.list) body.append(listEl(s.list));
+      if (s.list2) body.append(listEl(s.list2));
+      card.append(body); form.append(card);
+    });
+  }
+
+  /* ---------- load & save ---------- */
+  async function load() {
+    const file = await gh("content.js");
+    sha = file.sha;
+    const src = b64decode(file.content);
+    data = new Function("window", src + "\n;return window.SITE;")({});
+    if (!data) throw new Error("content.js could not be read");
+  }
+
+  async function save() {
+    const btn = $("[data-save]"); btn.disabled = true; status("Saving…", "", 0);
+    const out = `/* =====================================================================
+   CONTENT.JS — all website text lives here.
+   Easiest way to edit: open  ${SITE_URL}admin.html
+   ===================================================================== */
+
+window.SITE = ${JSON.stringify(data, null, 2)};
+`;
+    try {
+      const res = await gh("content.js", { method: "PUT", body: JSON.stringify({ message: "Update content (website editor)", branch: BRANCH, content: b64encode(out), sha }) });
+      sha = res.content.sha; dirty = false; document.body.classList.remove("is-dirty");
+      status("Saved! The website updates in about a minute.", "ok", 6000);
+    } catch (e) {
+      if (e.status === 409) status("Someone else changed the site meanwhile. Reload this page and make your change again.", "err", 10000);
+      else status("Could not save: " + e.message, "err", 10000);
+    } finally { btn.disabled = false; }
+  }
+
+  async function start(t, remember) {
+    token = t.trim();
+    try {
+      await load();
+      if (remember) store.set("editor-token", token);
+      $("[data-login]").hidden = true; $("[data-editor]").hidden = false;
+      $("[data-view]").href = SITE_URL;
+      render();
+    } catch (e) {
+      store.del("editor-token");
+      $("[data-editor]").hidden = true; $("[data-login]").hidden = false;
+      $("[data-login-msg]").textContent = e.status === 401 || e.status === 403 || e.status === 404
+        ? "That key didn't work. Check it has access to the Vilasini repository with Contents: Read and write."
+        : "Could not open the editor: " + e.message;
+    }
+  }
+
+  $("[data-login-form]").addEventListener("submit", (e) => {
+    e.preventDefault(); const f = e.target;
+    $("[data-login-msg]").textContent = "Checking…";
+    start(f.token.value, f.remember.checked);
+  });
+  $("[data-save]").addEventListener("click", save);
+  $("[data-signout]").addEventListener("click", () => {
+    if (dirty && !confirm("You have unsaved changes. Sign out anyway?")) return;
+    dirty = false; store.del("editor-token"); location.reload();
+  });
+  document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "s" && data) { e.preventDefault(); save(); } });
+
+  const saved = store.get("editor-token");
+  if (saved) start(saved, true); else $("[data-login]").hidden = false;
+})();
+</script>
+</body>
+</html>
