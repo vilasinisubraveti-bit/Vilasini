@@ -168,6 +168,48 @@
     a.download = ev.title.replace(/[^\w]+/g, "-") + ".ics"; a.click();
   });
 
+  /* ---------- Instagram concert posts ----------
+     Links come from instagram-seed.json + content.js "instagramPosts" (added in the editor).
+     The posting date is read from the link itself, so posts sort newest first automatically. */
+  const IG_ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const igCode = (u) => (String(u).match(/instagram\.com\/(?:[\w.]+\/)?(?:p|reel|tv)\/([\w-]{8,})/) || [])[1];
+  const igDate = (code) => { try { let n = 0n; for (const ch of code.slice(0, 11)) n = n * 64n + BigInt(IG_ABC.indexOf(ch)); return new Date(Number(n >> 23n) + 1314220021721); } catch { return null; } };
+  window.__ig = { igCode, igDate };
+  const loadEmbedJs = () => { if (window.instgrm) return window.instgrm.Embeds.process();
+    if (document.querySelector("script[data-igjs]")) return; const t = document.createElement("script"); t.src = "https://www.instagram.com/embed.js"; t.async = true; t.dataset.igjs = "1"; document.body.appendChild(t); };
+  // type "concert" -> Concerts section · type "honour" (chief guest, awards…) -> Accomplishments
+  const renderInsta = (items, type, wrapSel, gridSel, moreSel) => {
+    const hidden = new Set((S.instagramHidden || []).map(igCode));
+    const seen = new Set();
+    const posts = items.map((u) => (typeof u === "string" ? { url: u, type: "concert" } : u)).filter((x) => x && (x.type || "concert") === type)
+      .map((x) => igCode(x.url)).filter((c) => c && !hidden.has(c) && !seen.has(c) && seen.add(c))
+      .map((c) => ({ code: c, date: igDate(c) })).sort((a, b) => (b.date || 0) - (a.date || 0));
+    const wrap = $(wrapSel); wrap.hidden = !posts.length; if (type === "honour") refreshAcc(); if (!posts.length) return;
+    let shown = 0; const PAGE = 6, grid = $(gridSel), more = $(moreSel);
+    const addPage = () => {
+      posts.slice(shown, shown + PAGE).forEach((p) => {
+        const url = `https://www.instagram.com/p/${p.code}/`;
+        const d = document.createElement("div"); d.className = "insta__item"; d.dataset.code = p.code;
+        d.innerHTML = `<div class="insta__date">${p.date ? p.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""}</div>
+          <blockquote class="instagram-media" data-instgrm-permalink="${url}?utm_source=ig_embed" data-instgrm-version="14" data-instgrm-captioned>
+          <a class="insta__fallback" href="${url}" target="_blank" rel="noopener">View on Instagram ↗</a></blockquote>`;
+        grid.appendChild(d);
+      });
+      shown += PAGE; more.hidden = shown >= posts.length; loadEmbedJs();
+    };
+    more.onclick = addPage;
+    if ("IntersectionObserver" in window) {
+      const io2 = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io2.disconnect(); addPage(); } }, { rootMargin: "400px" });
+      io2.observe(wrap);
+    } else addPage();
+  };
+  fetch("instagram-seed.json", { cache: "no-cache" }).then((r) => r.ok ? r.json() : []).catch(() => [])
+    .then((seed) => {
+      const all = [...(S.instagramPosts || []), ...(Array.isArray(seed) ? seed : [])];
+      renderInsta(all, "concert", "[data-insta-wrap]", "[data-insta]", "[data-insta-more]");
+      renderInsta(all, "honour", "[data-insta-honour-wrap]", "[data-insta-honour]", "[data-insta-honour-more]");
+    });
+
   /* ---------- classes (switch in content.js) ---------- */
   const C = S.classes || {};
   const preview = params.get("preview") === "classes";
@@ -231,17 +273,31 @@
 
   /* ---------- accomplishments: awards (content.js) + press (press.json) ---------- */
   const accSection = $("[data-acc-section]");
-  const refreshAcc = () => { accSection.hidden = $("[data-achievements-wrap]").hidden && $("[data-press-wrap]").hidden; observe(); };
+  const refreshAcc = () => { accSection.hidden = $("[data-press-wrap]").hidden && $("[data-insta-honour-wrap]").hidden; observe(); };
+  /* Awards: rich cards (photo, year, conferred by, full write-up, link, video) */
   const achv = (S.achievements || []).filter((x) => x && x.title)
-    .sort((a, b) => String(b.year || "").localeCompare(String(a.year || "")));
+    .sort((a, b) => String(b.date || b.year || "").localeCompare(String(a.date || a.year || "")));
+  const paras = (t) => (Array.isArray(t) ? t : String(t || "").split(/\n\s*\n|\n/)).map((x) => String(x).trim()).filter(Boolean);
   if (achv.length) {
-    $("[data-achievements-wrap]").hidden = false;
-    $("[data-achievements]").innerHTML = achv.map((x) => {
-      const inner = `${x.year ? `<div class="achv__year">${esc(x.year)}</div>` : ""}<div class="achv__title">${esc(x.title)}</div>
-        ${x.detail ? `<div class="achv__detail">${esc(x.detail)}</div>` : ""}${x.link ? `<span class="achv__go">View ↗</span>` : ""}`;
-      const key = `data-key="${esc(x.title)}|${esc(x.year || "")}"`;
-      return x.link ? `<a class="achv reveal" ${key} href="${esc(x.link)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="achv reveal" ${key}>${inner}</div>`;
+    $("[data-awards-section]").hidden = false; const al = $("[data-awards-link]"); if (al) al.hidden = false;
+    $("[data-achievements]").innerHTML = achv.map((x, i) => {
+      const text = paras(x.description || x.detail);
+      return `<button class="award reveal" data-award="${i}" data-key="${esc(x.title)}|${esc(x.year || "")}">
+        <div class="award__img">${x.year ? `<span class="award__year">${esc(x.year)}</span>` : ""}<span class="award__emblem">🏆</span>${x.image ? `<img src="${esc(x.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>
+        <div class="award__body">${x.by ? `<div class="award__by">${esc(x.by)}</div>` : ""}<div class="award__title">${esc(x.title)}</div>
+          ${text[0] ? `<p class="award__ex">${esc(text[0].length > 140 ? text[0].slice(0, 137) + "…" : text[0])}</p>` : ""}
+          <span class="award__more">Read more →</span></div></button>`;
     }).join("");
+    document.addEventListener("click", (e) => {
+      const c = e.target.closest("[data-award]"); if (!c || document.body.classList.contains("is-editing")) return;
+      const x = achv[+c.dataset.award]; const text = paras(x.description || x.detail);
+      const vid = (String(x.video || "").match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/) || [])[1] || (/^[\w-]{11}$/.test(x.video || "") ? x.video : "");
+      openModal(`<article class="reader award-full"><p class="eyebrow">${esc([x.year, x.by].filter(Boolean).join(" · "))}</p><h2>${esc(x.title)}</h2>
+        ${x.image ? `<img class="award-full__img" src="${esc(x.image)}" alt="${esc(x.title)}">` : ""}
+        ${text.map((t) => `<p>${esc(t)}</p>`).join("")}
+        ${vid ? `<div class="award-full__video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(vid)}?rel=0" allowfullscreen allow="encrypted-media; picture-in-picture"></iframe></div>` : ""}
+        ${x.link ? `<p><a class="btn" href="${esc(x.link)}" target="_blank" rel="noopener">More about this award ↗</a></p>` : ""}</article>`);
+    });
   }
   const renderPress = (items) => {
     $("[data-press-wrap]").hidden = !items.length;

@@ -27,6 +27,7 @@
         <a href="#music">Music</a>
         <a href="#events">Concerts</a>
         <a href="#classes" data-classes-link hidden>Classes</a>
+        <a href="#awards" data-awards-link hidden>Awards</a>
         <a href="#accomplishments">Accomplishments</a>
         <a href="#articles">Articles</a>
         <a href="#about">About</a>
@@ -86,6 +87,11 @@
           <button class="tab" data-events-tab="past">Past</button>
         </div>
         <div class="events" data-events></div>
+        <div class="insta" data-insta-wrap hidden>
+          <h3 class="subhead reveal">Recent concerts on Instagram</h3>
+          <div class="insta__grid" data-insta></div>
+          <button class="btn btn--ghost" data-insta-more hidden>Show more</button>
+        </div>
       </div>
     </section>
 
@@ -112,16 +118,28 @@
       </div>
     </section>
 
+    <!-- AWARDS (rich content, added in the editor) -->
+    <section class="section section--alt" id="awards" data-awards-section hidden>
+      <div class="wrap">
+        <div class="section__head reveal">
+          <p class="eyebrow">Awards</p>
+          <h2>Awards &amp; recognition</h2>
+        </div>
+        <div class="awards" data-achievements></div>
+      </div>
+    </section>
+
     <!-- ACCOMPLISHMENTS: awards (typed in the editor) + press (fetched automatically) -->
     <section class="section" id="accomplishments" data-acc-section hidden>
       <div class="wrap">
         <div class="section__head reveal">
           <p class="eyebrow">Accomplishments</p>
-          <h2>Awards, honours &amp; press</h2>
+          <h2>Honours &amp; press</h2>
         </div>
-        <div data-achievements-wrap hidden>
-          <h3 class="subhead reveal">Awards &amp; achievements</h3>
-          <div class="achievements" data-achievements></div>
+        <div class="insta" data-insta-honour-wrap hidden style="margin:0 0 48px">
+          <h3 class="subhead reveal">Honours &amp; invitations</h3>
+          <div class="insta__grid" data-insta-honour></div>
+          <button class="btn btn--ghost" data-insta-honour-more hidden>Show more</button>
         </div>
         <div data-press-wrap hidden>
           <h3 class="subhead reveal">In the press</h3>

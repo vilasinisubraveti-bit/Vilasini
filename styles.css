@@ -279,3 +279,30 @@ a.achv:hover{transform:translateY(-3px);border-color:var(--accent)}
 @media (max-width:600px){.owner-bar{border-radius:18px;bottom:10px}.owner-bar__msg{flex-basis:100%;text-align:center}}
 .owner-social-btn{margin-top:14px}
 .owner-social{margin-top:12px;max-width:520px}
+
+/* Instagram concert posts */
+.insta{margin-top:56px}
+.insta__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px;align-items:start}
+.insta__item{position:relative;display:flex;flex-direction:column;gap:6px}
+.insta__date{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.insta__item .instagram-media{min-width:0!important;width:100%!important;max-width:100%!important;margin:0!important;border-radius:14px!important}
+.insta__fallback{display:flex;align-items:center;justify-content:center;gap:10px;aspect-ratio:1;background:linear-gradient(135deg,#efe3d0,#dcb99a);border-radius:14px;color:var(--accent);font-weight:600;text-decoration:none;border:1px solid var(--line)}
+[data-insta-more]{margin-top:22px}
+.insta__item .owner-x--card{top:24px}
+#events .owner-panel{margin-top:40px}
+
+/* Awards */
+.awards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
+.award{position:relative;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer;text-align:left;color:inherit;font:inherit;padding:0;transition:transform .3s,border-color .3s,box-shadow .3s}
+.award:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 18px 40px -24px rgba(80,40,20,.35)}
+.award__img{aspect-ratio:4/3;position:relative;background:radial-gradient(circle at 50% 40%,#f6e3b8,#e2bf85 55%,#c8891c);display:grid;place-items:center;overflow:hidden}
+.award__img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.award__emblem{font-size:3.4rem;filter:drop-shadow(0 4px 10px rgba(120,60,10,.35))}
+.award__year{position:absolute;top:12px;left:12px;background:var(--accent);color:#fff;font-weight:600;font-size:.8rem;padding:.25em .7em;border-radius:999px;z-index:2}
+.award__body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:6px;flex:1}
+.award__title{font-family:var(--display);font-size:1.25rem;line-height:1.25;font-weight:600}
+.award__by{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.award__ex{color:var(--muted);font-size:.93rem;margin:0}
+.award__more{margin-top:auto;color:var(--accent);font-weight:500;font-size:.9rem;padding-top:6px}
+.award-full img.award-full__img{width:100%;border-radius:12px;margin:10px 0 18px}
+.award-full__video{aspect-ratio:16/9;margin:18px 0}.award-full__video iframe{width:100%;height:100%;border:0;border-radius:12px}

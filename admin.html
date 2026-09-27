@@ -139,11 +139,13 @@ textarea{min-height:90px;resize:vertical}
       T("artist.bio", "About (bio)", { type: "paragraphs", help: "Leave a blank line between paragraphs." }) ] },
     { title: "Highlights", hint: "Years of training, concerts…", open: true, list: { path: "artist.stats", add: "Add highlight",
       item: [T("value", "Number", { help: "e.g. 20+" }), T("label", "Label", { help: "e.g. Years of training" })], title: (x) => `${x.value || ""} ${x.label || ""}` } },
-    { title: "Awards & achievements", hint: "Titles, awards, milestones", list: { path: "achievements", add: "Add achievement", newFirst: true,
+    { title: "Awards", hint: "Awards with photos and full write-ups", list: { path: "achievements", add: "Add award", newFirst: true,
       title: (x) => `${x.year || ""} ${x.title || ""}`, item: [
-      T("year", "Year", { help: "e.g. 2019" }), T("title", "Award / achievement", { help: "e.g. 'Yuva Kala Bharathi' title" }),
-      T("detail", "Given by / details", { type: "textarea", help: "e.g. Conferred by Bharat Kalachar, Chennai" }),
-      T("link", "Link (optional)", { help: "A news article, certificate photo or video about it" }) ] } },
+      T("year", "Year", { help: "e.g. 2019" }), T("title", "Award / title", { help: "e.g. Yuva Kala Bharathi" }),
+      T("by", "Conferred by", { help: "e.g. Bharat Kalachar, Chennai" }),
+      T("description", "Full write-up", { type: "paragraphs", help: "As long as you like. Blank line = new paragraph." }),
+      T("image", "Photo (optional)", { type: "image", folder: "assets/awards", help: "Upload a certificate, ceremony or trophy photo — or paste a picture link." }),
+      T("link", "Link to news / more info (optional)"), T("video", "YouTube link of the ceremony (optional)", { video: false }) ] } },
     { title: "Online classes", hint: "Switch on/off, prices, payment links", fields: [
       T("classes.enabled", "Show classes on the website", { type: "check" }),
       T("classes.inviteOnly", "Invite-only (students need the access code)", { type: "check" }),
@@ -166,6 +168,9 @@ textarea{min-height:90px;resize:vertical}
       T("quote", "Short quote to show (optional)", { type: "textarea" }),
       T("image", "Picture link (optional)", { help: "Leave empty to use the article's own picture." }) ] },
       list2: { path: "pressHidden", add: "Hide a link", label: "Hide these links (e.g. a found article that is not about her)", string: true } },
+    { title: "Instagram posts", hint: "Concert posts & chief-guest/honour posts", list: { path: "instagramPosts", add: "Add Instagram post", newFirst: true, title: (x) => `${x.type === "honour" ? "Honour" : "Concert"} · ${x.url || ""}`, item: [
+      T("url", "Instagram post link"), T("type", "Show under", { type: "select", options: ["concert", "honour"], help: "concert = Concerts section · honour = Accomplishments (chief guest, awards)" }) ] },
+      list2: { path: "instagramHidden", add: "Hide a post", label: "Hidden posts (links)", string: true } },
     { title: "What people say", hint: "Testimonials", list: { path: "testimonials", add: "Add testimonial", title: (x) => x.name, item: [
       T("quote", "Quote", { type: "textarea" }), T("name", "Name"), T("place", "Place") ] } },
     { title: "Featured in & collaborations", hint: "Names shown in a strip", list: { path: "featuredIn", add: "Add name", string: true } },
@@ -211,6 +216,28 @@ textarea{min-height:90px;resize:vertical}
       input = document.createElement("textarea");
       input.value = f.type === "paragraphs" ? (Array.isArray(val) ? val.join("\n\n") : val || "") : val || "";
       if (f.type === "paragraphs") input.style.minHeight = "160px";
+    } else if (f.type === "image") {
+      // text box with the picture's address + an upload button that resizes and saves the photo to the site
+      input = Object.assign(document.createElement("input"), { type: "text", value: val ?? "", placeholder: "Picture link" });
+      const up = Object.assign(document.createElement("input"), { type: "file", accept: "image/*" });
+      const prev = document.createElement("img"); prev.style.cssText = "max-width:160px;border-radius:8px;border:1px solid var(--line)"; if (val) prev.src = (/^https?:/.test(val) ? "" : SITE_URL) + val; prev.onerror = () => (prev.style.display = "none");
+      up.onchange = async () => {
+        const file = up.files[0]; if (!file) return;
+        try {
+          status("Uploading photo…", "", 0);
+          const bmp = await createImageBitmap(file); const sc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+          const c = Object.assign(document.createElement("canvas"), { width: Math.round(bmp.width * sc), height: Math.round(bmp.height * sc) });
+          c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); const dataUrl = c.toDataURL("image/jpeg", 0.85);
+          const path = `${f.folder || "assets/uploads"}/${Date.now().toString(36)}.jpg`;
+          await gh(path, { method: "PUT", body: JSON.stringify({ message: "Upload photo (website editor)", branch: BRANCH, content: dataUrl.split(",")[1] }) });
+          input.value = path; setPath(obj, f.path, path); prev.src = dataUrl; prev.style.display = ""; onChange();
+          status("Photo uploaded — click Save changes to finish.", "ok");
+        } catch (e) { status("Photo upload failed: " + e.message, "err", 8000); }
+      };
+      wrap.append(input, up, prev);
+      input.addEventListener("input", () => { setPath(obj, f.path, input.value.trim()); onChange(); });
+      if (f.help) { const h = document.createElement("p"); h.className = "help"; h.textContent = f.help; wrap.append(h); }
+      return wrap;
     } else if (f.type === "select") {
       input = document.createElement("select");
       f.options.forEach((o) => input.append(new Option(o, o)));
@@ -256,7 +283,7 @@ textarea{min-height:90px;resize:vertical}
           const g = document.createElement("div"); g.className = "grid2";
           cfg.item.forEach((f) => {
             const el = fieldEl(f, it, () => { markDirty(); refreshName(); });
-            if (["textarea", "paragraphs", "check"].includes(f.type)) el.style.gridColumn = "1/-1";
+            if (["textarea", "paragraphs", "check", "image"].includes(f.type)) el.style.gridColumn = "1/-1";
             g.append(el);
           });
           item.append(g);

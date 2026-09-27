@@ -63,7 +63,7 @@ for (const e of entries) {
   catch (err) { console.log("✗", e.url, err.message, "(keeping previous details)"); found = prevByUrl[e.url] || {}; }
   // Anything typed in the editor wins over what was found on the page
   const pick = (k) => (e[k] && String(e[k]).trim()) || found[k] || "";
-  out.push({ url: e.url, title: pick("title") || e.url, source: pick("source"), date: pick("date"), image: pick("image"), quote: e.quote || "" });
+  out.push({ url: e.url, title: pick("title") || e.fallbackTitle || e.url, source: pick("source"), date: pick("date"), image: pick("image"), quote: e.quote || "" });
 }
 out.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 fs.writeFileSync("press.json", JSON.stringify(out, null, 2) + "\n");

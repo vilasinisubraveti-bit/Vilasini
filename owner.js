@@ -110,6 +110,43 @@ window.SITE = ${JSON.stringify(data, null, 2)};
     photo.appendChild(pbtn);
     decorateAccomplishments();
     socialEditor();
+    instaEditor();
+  }
+
+  /* ---------- Instagram posts: add (concert or honour) / remove ---------- */
+  function instaEditor() {
+    const host = $("#events .wrap"); if (!host) return;
+    const panel = document.createElement("form"); panel.className = "owner-panel";
+    panel.innerHTML = `<b>📸 Add an Instagram post</b>
+      <input name="url" type="url" required placeholder="Paste the Instagram post link">
+      <select name="type" style="flex:0 1 230px"><option value="concert">Concert (shows here)</option><option value="honour">Chief guest / honour (Accomplishments)</option></select>
+      <button class="owner-btn">Add</button>
+      <p class="owner-hint">The date is read from the link, so posts sort newest first automatically.</p>`;
+    $("[data-insta-wrap]") ? $("[data-insta-wrap]").before(panel) : host.appendChild(panel);
+    panel.onsubmit = async (e) => {
+      e.preventDefault();
+      const code = window.__ig?.igCode(panel.url.value);
+      if (!code) { msg("That doesn't look like an Instagram post link", "err"); return; }
+      const url = `https://www.instagram.com/p/${code}/`, type = panel.type.value;
+      $$("button,input,select", panel).forEach((x) => (x.disabled = true)); msg("Adding post…", "", 0);
+      try {
+        await commit("Add Instagram post", (d) => {
+          d.instagramPosts = (d.instagramPosts || []).filter((x) => window.__ig.igCode(typeof x === "string" ? x : x.url) !== code);
+          d.instagramPosts.unshift({ url, type });
+          d.instagramHidden = (d.instagramHidden || []).filter((x) => window.__ig.igCode(x) !== code);
+        });
+        panel.reset(); msg(`Added ✓ — shows under ${type === "honour" ? "Accomplishments" : "Concerts"} in about a minute`, "ok", 8000);
+      } catch (err) { msg("Could not add: " + err.message, "err", 10000); }
+      finally { $$("button,input,select", panel).forEach((x) => (x.disabled = false)); }
+    };
+    const wireRemove = () => $$(".insta__item").forEach((item) => addRemove(item, async () => {
+      const code = item.dataset.code;
+      await commit("Remove Instagram post", (d) => {
+        d.instagramPosts = (d.instagramPosts || []).filter((x) => window.__ig.igCode(typeof x === "string" ? x : x.url) !== code);
+        d.instagramHidden = [...new Set([...(d.instagramHidden || []), `https://www.instagram.com/p/${code}/`])];
+      });
+    }));
+    wireRemove(); setTimeout(wireRemove, 1500);
   }
 
   /* ---------- Social links & address (owner only) ---------- */
@@ -175,9 +212,9 @@ window.SITE = ${JSON.stringify(data, null, 2)};
   const today = () => new Date().toISOString().slice(0, 10);
   function decorateAccomplishments() {
     const sec = $("[data-acc-section]"); sec.hidden = false;
-    $("[data-achievements-wrap]").hidden = false; $("[data-press-wrap]").hidden = false;
+    $("[data-press-wrap]").hidden = false;
     // remove buttons
-    $$("[data-achievements] .achv").forEach((card) => addRemove(card, async () => {
+    $$("[data-achievements] .award").forEach((card) => addRemove(card, async () => {
       const [title, year] = card.dataset.key.split("|");
       await commit("Remove achievement", (d) => { d.achievements = (d.achievements || []).filter((x) => !(x.title === title && String(x.year || "") === year)); });
     }));
@@ -193,7 +230,7 @@ window.SITE = ${JSON.stringify(data, null, 2)};
     panel.innerHTML = `<div class="owner-tabs">
         <button data-tab="link" class="is-on">🔗 Paste a link</button>
         <button data-tab="photo">📷 Newspaper photo</button>
-        <button data-tab="award">🏆 Award</button></div>
+</div>
       <form data-form="link"><input name="url" type="url" placeholder="Paste the article or video link" required>
         <input name="date" type="date" title="Date (optional — found automatically)"><button class="owner-btn">Add</button>
         <p class="owner-hint">Headline, picture and date are fetched automatically. Items are sorted newest first.</p></form>
@@ -202,9 +239,7 @@ window.SITE = ${JSON.stringify(data, null, 2)};
         <input name="source" placeholder="Newspaper, e.g. The Hindu">
         <input name="date" type="date" value="${today()}" required><button class="owner-btn">Upload</button>
         <p class="owner-hint">On a phone this opens the camera — photograph the clipping flat, in good light.</p></form>
-      <form data-form="award" hidden><input name="year" placeholder="Year" inputmode="numeric" required style="max-width:110px">
-        <input name="title" placeholder="Award / achievement" required><input name="detail" placeholder="Given by / details">
-        <input name="link" type="url" placeholder="Link (optional)"><button class="owner-btn">Add</button></form>`;
+`;
     sec.querySelector(".section__head").after(panel);
     $$("[data-tab]", panel).forEach((b) => (b.onclick = () => {
       $$("[data-tab]", panel).forEach((x) => x.classList.toggle("is-on", x === b));
@@ -240,20 +275,47 @@ window.SITE = ${JSON.stringify(data, null, 2)};
       } catch (err) { msg("Upload failed: " + err.message, "err", 10000); }
       finally { busy(f, false); }
     };
-    $("[data-form=award]", panel).onsubmit = async (e) => {
-      e.preventDefault(); const f = e.target;
-      const item = { year: f.year.value.trim(), title: f.title.value.trim(), detail: f.detail.value.trim(), link: f.link.value.trim() };
-      busy(f, true); msg("Adding award…", "", 0);
+    awardsPanel();
+  }
+
+  /* ---------- Awards: add with photo + full write-up ---------- */
+  function awardsPanel() {
+    const sec = $("[data-awards-section]"); if (!sec) return;
+    sec.hidden = false;
+    const panel = document.createElement("form"); panel.className = "owner-panel";
+    panel.innerHTML = `<b>🏆 Add an award</b>
+      <input name="year" placeholder="Year" inputmode="numeric" required style="flex:0 1 110px">
+      <input name="title" placeholder="Award / title, e.g. Yuva Kala Bharathi" required>
+      <input name="by" placeholder="Conferred by, e.g. Bharat Kalachar, Chennai">
+      <textarea name="description" rows="5" placeholder="Write as much as you like — what the award is, why it was given, the ceremony, who presented it… (blank line = new paragraph)" style="flex-basis:100%"></textarea>
+      <label class="owner-hint" style="flex-basis:100%;display:grid;gap:4px">Photo (certificate, ceremony, trophy — optional)<input name="file" type="file" accept="image/*"></label>
+      <input name="link" type="url" placeholder="Link to news / more info (optional)">
+      <input name="video" placeholder="YouTube link of the ceremony (optional)">
+      <button class="owner-btn">Add award</button>
+      <p class="owner-hint">To change an award later: remove it with ✕ and add it again, or use All settings → Awards.</p>`;
+    sec.querySelector(".section__head").after(panel);
+    panel.onsubmit = async (e) => {
+      e.preventDefault(); const f = panel;
+      const item = { year: f.year.value.trim(), title: f.title.value.trim(), by: f.by.value.trim(),
+        description: f.description.value.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean), link: f.link.value.trim(), video: f.video.value.trim(), image: "" };
+      const busyAll = (on) => $$("button,input,textarea", f).forEach((x) => (x.disabled = on));
+      busyAll(true); msg("Adding award…", "", 0);
       try {
-        await commit("Add achievement", (d) => { (d.achievements ||= []).unshift(item); });
-        f.reset(); msg("Award added ✓ — live in about a minute", "ok");
-        const card = document.createElement("div"); card.className = "achv is-in"; card.dataset.key = `${item.title}|${item.year}`;
-        card.innerHTML = `<div class="achv__year">${esc(item.year)}</div><div class="achv__title">${esc(item.title)}</div>${item.detail ? `<div class="achv__detail">${esc(item.detail)}</div>` : ""}`;
-        $("[data-achievements]").prepend(card); addRemove(card, async () => {
-          await commit("Remove achievement", (d) => { d.achievements = (d.achievements || []).filter((x) => !(x.title === item.title && String(x.year || "") === item.year)); });
-        });
+        const file = f.file.files[0];
+        if (file) {
+          const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-|-$/g, "");
+          item.image = `assets/awards/${item.year || "award"}-${slug}-${Date.now().toString(36)}.jpg`;
+          msg("Uploading photo…", "", 0); await uploadImage(item.image, file, 1600);
+        }
+        await commit("Add award", (d) => { (d.achievements ||= []).unshift(item); });
+        f.reset(); msg("Award added ✓ — live for everyone in about a minute", "ok");
+        const card = document.createElement("div"); card.className = "award is-in"; card.dataset.key = `${item.title}|${item.year}`;
+        card.innerHTML = `<div class="award__img"><span class="award__year">${esc(item.year)}</span><span class="award__emblem">🏆</span></div>
+          <div class="award__body">${item.by ? `<div class="award__by">${esc(item.by)}</div>` : ""}<div class="award__title">${esc(item.title)}</div><span class="award__more">New</span></div>`;
+        $("[data-achievements]").prepend(card);
+        addRemove(card, async () => { await commit("Remove award", (d) => { d.achievements = (d.achievements || []).filter((x) => !(x.title === item.title && String(x.year || "") === item.year)); }); });
       } catch (err) { msg("Could not add: " + err.message, "err", 10000); }
-      finally { busy(f, false); }
+      finally { busyAll(false); }
     };
   }
 
