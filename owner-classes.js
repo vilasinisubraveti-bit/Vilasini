@@ -100,21 +100,73 @@
     askPin(!site.classVault);
   };
 
+  // PIN rules: 12+ characters, not all one kind (a short passphrase like "Kalyani-Raga-2026" is ideal)
+  function pinProblem(p) {
+    if ((p || "").length < 12) return "Use at least 12 characters — a short phrase works well, e.g. Kalyani-Raga-2026.";
+    if (/^(\d+|[a-z]+|[A-Z]+)$/.test(p)) return "Mix letters with numbers or symbols.";
+    if (/^(.)\1+$/.test(p) || /^(0123|1234|abcd|pass|qwer)/i.test(p)) return "That PIN is too easy to guess.";
+    return "";
+  }
+  const secretNote = `<p class="muted"><b>Important:</b> also update the GitHub secret <b>CLASS_PIN</b> to the new PIN
+    (repo → Settings → Secrets and variables → Actions → CLASS_PIN → ✎), then Actions → <b>Sync Classes calendar (private)</b> → Run workflow.
+    Otherwise Google Calendar entries won't show in your calendar here.</p>`;
+
   function askPin(isNew) {
     const body = shell(isNew ? "Set up your classes" : "Unlock your classes");
     body.innerHTML = `<p class="muted">${isNew
-      ? "Choose a <b>classes PIN</b> (at least 6 characters). It locks your class links and student portal. Share it only with your brother, who also manages the site."
+      ? "Choose a <b>classes PIN</b> (at least 12 characters — a short phrase is easiest). It locks your class links and student portal. Share it only with your brother, who also manages the site."
       : "Enter your <b>classes PIN</b>. You only need to do this once on this device."}</p>
-      <form class="card"><label>Classes PIN<input name="p" type="password" minlength="6" required autocomplete="off"></label>
-      ${isNew ? `<label>Type it again<input name="p2" type="password" minlength="6" required autocomplete="off"></label>` : ""}
-      <button class="b">${isNew ? "Create" : "Unlock"}</button><p class="err" data-e></p></form>`;
+      <form class="card"><label>Classes PIN<input name="p" type="password" required autocomplete="off"></label>
+      ${isNew ? `<label>Type it again<input name="p2" type="password" required autocomplete="off"></label>` : ""}
+      <button class="b">${isNew ? "Create" : "Unlock"}</button><p class="err" data-e></p></form>
+      ${isNew ? "" : `<p class="muted"><a href="#" data-lost>Forgot the PIN?</a></p>`}`;
     $("form", body).onsubmit = async (e) => {
       e.preventDefault(); const f = e.target;
-      if (isNew && f.p.value !== f.p2.value) { $("[data-e]", body).textContent = "The two PINs don't match."; return; }
+      if (isNew) {
+        const bad = pinProblem(f.p.value); if (bad) { $("[data-e]", body).textContent = bad; return; }
+        if (f.p.value !== f.p2.value) { $("[data-e]", body).textContent = "The two PINs don't match."; return; }
+      }
       pin = f.p.value;
       if (isNew) { vault = { sessions: [], availability: [], note: "", portalKey: CC.randomKey() }; store.set("class-pin", pin); await save("Set up classes"); return main(); }
       try { vault = await CC.unlock(site.classVault, pin); store.set("class-pin", pin); main(); }
       catch { $("[data-e]", body).textContent = "That PIN is not correct."; }
+    };
+    const lost = $("[data-lost]", body);
+    if (lost) lost.onclick = (e) => {
+      e.preventDefault();
+      body.innerHTML = `<div class="card"><h3>Forgot the classes PIN?</h3>
+        <p class="muted">First, check whether the other manager (you or your brother) still has it — any device where the Classes manager opens without asking already knows it, and can use <b>Change PIN</b> there.</p>
+        <p class="muted">Otherwise you can <b>start fresh</b> with a new PIN. Because everything is encrypted, the old classes, students, fees and bank details can't be recovered — you would re-enter them, and send students new links.</p>
+        <div class="row"><button class="b g" data-back>← Back</button><button class="b" data-fresh>Start fresh with a new PIN</button></div></div>`;
+      $("[data-back]", body).onclick = () => askPin(false);
+      $("[data-fresh]", body).onclick = () => {
+        if (prompt('This erases all saved classes and students. Type ERASE to continue.') !== "ERASE") return;
+        store.del("class-pin"); askPin(true);
+      };
+    };
+  }
+
+  function changePin(v) {
+    v.innerHTML = `<div class="card"><h3>Change classes PIN</h3>
+      <form><label>Current PIN<input name="o" type="password" required autocomplete="off"></label>
+      <label>New PIN (12+ characters)<input name="n" type="password" required autocomplete="new-password"></label>
+      <label>New PIN again<input name="n2" type="password" required autocomplete="new-password"></label>
+      <div class="row"><button class="b">Change PIN</button><button type="button" class="b g" data-cancel>Cancel</button></div>
+      <p class="err" data-e></p></form></div>`;
+    $("[data-cancel]", v).onclick = () => viewPortal(v);
+    $("form", v).onsubmit = async (e) => {
+      e.preventDefault(); const f = e.target, err = $("[data-e]", v);
+      if (f.o.value !== pin) { err.textContent = "The current PIN is not correct."; return; }
+      const bad = pinProblem(f.n.value); if (bad) { err.textContent = bad; return; }
+      if (f.n.value !== f.n2.value) { err.textContent = "The two new PINs don't match."; return; }
+      if (f.n.value === pin) { err.textContent = "The new PIN is the same as the old one."; return; }
+      const old = pin; pin = f.n.value; f.querySelector("button").disabled = true;
+      if (!(await save("Change classes PIN"))) { pin = old; f.querySelector("button").disabled = false; return; }
+      store.set("class-pin", pin); gcal = []; gcalLoaded = false;
+      v.innerHTML = `<div class="card"><h3>✅ PIN changed</h3>
+        <p class="muted">This device now uses the new PIN. Other devices will ask for it the next time the Classes manager opens. Student links keep working.</p>
+        ${secretNote}<div class="row"><button class="b g" data-done>Done</button></div></div>`;
+      $("[data-done]", v).onclick = () => viewPortal(v);
     };
   }
 
@@ -479,9 +531,10 @@
       <div class="card"><h3>Reset the link</h3><p class="muted">If the link was shared with someone who should no longer have it, reset it. The old link stops working — send the new one to your current students.</p>
         <div class="row"><button class="b g" data-reset>Reset portal link</button></div></div>
       <div class="card"><h3>Classes PIN</h3><p class="muted">This device remembers your PIN. Use "Forget PIN" on shared computers.</p>
-        <div class="row"><button class="b g" data-forget>Forget PIN on this device</button></div></div>`;
+        <div class="row"><button class="b" data-change>Change PIN</button><button class="b g" data-forget>Forget PIN on this device</button></div></div>`;
     $("[data-copy]", v).onclick = (e) => copy(url, e.target);
     $("[data-reset]", v).onclick = async () => { if (!confirm("Reset the portal link? The old link will stop working.")) return; vault.portalKey = CC.randomKey(); if (await save("Reset student portal link")) main(); };
+    $("[data-change]", v).onclick = () => changePin(v);
     $("[data-forget]", v).onclick = () => { store.del("class-pin"); ui.remove(); O.msg("PIN forgotten on this device", "ok"); };
   }
 })();
