@@ -239,7 +239,8 @@
     $("[data-achievements]").innerHTML = achv.map((x) => {
       const inner = `${x.year ? `<div class="achv__year">${esc(x.year)}</div>` : ""}<div class="achv__title">${esc(x.title)}</div>
         ${x.detail ? `<div class="achv__detail">${esc(x.detail)}</div>` : ""}${x.link ? `<span class="achv__go">View ↗</span>` : ""}`;
-      return x.link ? `<a class="achv reveal" href="${esc(x.link)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="achv reveal">${inner}</div>`;
+      const key = `data-key="${esc(x.title)}|${esc(x.year || "")}"`;
+      return x.link ? `<a class="achv reveal" ${key} href="${esc(x.link)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="achv reveal" ${key}>${inner}</div>`;
     }).join("");
   }
   const renderPress = (items) => {
@@ -247,11 +248,12 @@
     const fmtD = (d) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "";
     $("[data-press]").innerHTML = items.map((p) => {
       const ph = `<div class="press-card__ph">${esc(p.source || "Press")}</div>`;
-      return `<a class="press-card reveal" href="${esc(p.url)}" target="_blank" rel="noopener">
+      const clip = !/^https?:/i.test(p.url);
+      return `<a class="press-card reveal" data-url="${esc(p.url)}" ${clip ? `data-clip data-title="${esc(p.title || "")}"` : ""} href="${esc(p.url)}" target="_blank" rel="noopener">
         <div class="press-card__img">${ph}${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div>
         <div class="press-card__body"><div class="press-card__meta">${esc([p.source, fmtD(p.date)].filter(Boolean).join(" · "))}</div>
           <h3 class="press-card__title">${esc(p.title || p.url)}</h3>${p.quote ? `<p class="press-card__quote">“${esc(p.quote)}”</p>` : ""}
-          <span class="press-card__go">Read article ↗</span></div></a>`;
+          <span class="press-card__go">${clip ? "View clipping ⤢" : "Read article ↗"}</span></div></a>`;
     }).join("");
     refreshAcc();
   };
@@ -321,6 +323,7 @@
   const quick = [];
   if (soc.whatsapp) quick.push(`<a class="btn" href="https://wa.me/${esc(soc.whatsapp)}?text=${encodeURIComponent("Hi! I found you through your website.")}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18">${icons.whatsapp}</svg> Chat on WhatsApp</a>`);
   if (soc.email) quick.push(`<a class="link-arrow" href="mailto:${esc(soc.email)}">${esc(soc.email)}</a>`);
+  if (soc.address) quick.push(`<a class="link-arrow" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(soc.address)}" target="_blank" rel="noopener">📍 ${esc(soc.address)}</a>`);
   $("[data-quick]").innerHTML = quick.join("");
 
   const form = $("[data-form]"), status = $(".form__status", form);
@@ -368,6 +371,15 @@
   /* ---------- "Edit site" button: only on devices where she has signed in to the editor ---------- */
   let isOwner = false; try { isOwner = !!localStorage.getItem("editor-token"); } catch {}
   if (isOwner || params.get("edit") === "1") { $("[data-edit-fab]").hidden = false; $("[data-edit-link]").hidden = false; }
+  // Newspaper clippings open large on the page
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-clip]"); if (!c || document.body.classList.contains("is-editing")) return;
+    e.preventDefault();
+    openModal(`<div class="reader"><h2>${esc(c.dataset.title)}</h2><img src="${esc(c.getAttribute("href"))}" alt="${esc(c.dataset.title)}" style="width:100%;border-radius:12px"></div>`);
+  });
+  // Owner tools (inline editing) load only on signed-in devices
+  window.__site = { openModal, esc };
+  if (isOwner) { const t = document.createElement("script"); t.src = "owner.js?v=" + Date.now(); document.body.appendChild(t); }
 
   /* ---------- reveal on scroll ---------- */
   var io;

@@ -58,7 +58,8 @@ async function inspect(url) {
 const out = [];
 for (const e of entries) {
   let found = {};
-  try { found = await inspect(e.url); console.log("✓", e.url); }
+  if (!/^https?:/i.test(e.url)) { found = {}; }                    // uploaded clipping photo — nothing to fetch
+  else try { found = await inspect(e.url); console.log("✓", e.url); }
   catch (err) { console.log("✗", e.url, err.message, "(keeping previous details)"); found = prevByUrl[e.url] || {}; }
   // Anything typed in the editor wins over what was found on the page
   const pick = (k) => (e[k] && String(e[k]).trim()) || found[k] || "";

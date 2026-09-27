@@ -248,3 +248,34 @@ a.achv:hover{transform:translateY(-3px);border-color:var(--accent)}
 /* Edit button — only shown on the owner's devices */
 .edit-fab{position:fixed;right:18px;bottom:18px;z-index:60;background:var(--accent);color:#fff;text-decoration:none;font:600 .9rem var(--body);padding:.75em 1.15em;border-radius:999px;box-shadow:0 10px 30px -8px rgba(80,30,20,.5)}
 .edit-fab:hover{transform:translateY(-2px)}
+
+/* Owner tools (only on signed-in devices) */
+.owner-bar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+  background:#2b211b;color:#fff;padding:8px 10px 8px 16px;border-radius:999px;box-shadow:0 14px 40px -10px rgba(0,0,0,.45);max-width:calc(100% - 24px);font:500 .88rem var(--body)}
+.owner-bar__msg{opacity:.85;margin-right:4px}
+.owner-bar__msg[data-kind=ok]{color:#9be3a8;opacity:1}.owner-bar__msg[data-kind=err]{color:#ffb4a8;opacity:1}
+.owner-btn{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:.55em 1em;font:600 .85rem var(--body);cursor:pointer;text-decoration:none;white-space:nowrap}
+.owner-btn--ghost{background:transparent;border:1px solid rgba(255,255,255,.35)}
+.owner-btn--save{background:#2f7a3e}
+.owner-btn:disabled{opacity:.5}
+.is-editing [contenteditable=true]{outline:2px dashed rgba(156,47,36,.55);outline-offset:4px;border-radius:6px;cursor:text;min-height:1em}
+.is-editing [contenteditable=true]:focus{outline-style:solid;background:rgba(255,255,255,.6)}
+.is-editing .hero__name{background:none;-webkit-text-fill-color:var(--text);color:var(--text)}
+.is-editing .reveal{opacity:1;transform:none}
+.is-editing [data-stats]>div{position:relative}
+.owner-x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;font-size:.8rem;z-index:5}
+.owner-x--card{top:10px;right:10px;width:32px;height:32px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.achv,.press-card{position:relative}
+.owner-add{background:transparent;border:2px dashed var(--line);border-radius:12px;color:var(--accent);font:600 .9rem var(--body);cursor:pointer;padding:12px;align-self:stretch}
+.owner-photo{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#fff;color:var(--text);border-radius:999px;padding:.6em 1.1em;font:600 .88rem var(--body);cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:3;white-space:nowrap}
+.owner-panel{background:#fff;border:2px dashed var(--accent);border-radius:var(--radius);padding:18px;margin-bottom:32px;display:grid;gap:12px}
+.owner-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.owner-tabs button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:.45em 1em;font:500 .88rem var(--body);cursor:pointer;color:var(--text)}
+.owner-tabs button.is-on{background:var(--text);color:#fff;border-color:var(--text)}
+.owner-panel form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.owner-panel input{flex:1 1 200px;width:auto}
+.owner-panel input[type=date]{flex:0 1 170px}
+.owner-hint{flex-basis:100%;margin:0;color:var(--muted);font-size:.82rem}
+@media (max-width:600px){.owner-bar{border-radius:18px;bottom:10px}.owner-bar__msg{flex-basis:100%;text-align:center}}
+.owner-social-btn{margin-top:14px}
+.owner-social{margin-top:12px;max-width:520px}
