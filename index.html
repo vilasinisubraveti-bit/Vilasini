@@ -27,6 +27,7 @@
         <a href="#music">Music</a>
         <a href="#events">Concerts</a>
         <a href="#classes" data-classes-link hidden>Classes</a>
+        <a href="#press">Press</a>
         <a href="#articles">Articles</a>
         <a href="#about">About</a>
         <a href="#contact" class="btn btn--small">Contact</a>
@@ -111,8 +112,19 @@
       </div>
     </section>
 
+    <!-- PRESS & REVIEWS (headline + picture fetched automatically) -->
+    <section class="section" id="press" data-press-section hidden>
+      <div class="wrap">
+        <div class="section__head reveal">
+          <p class="eyebrow">In the press</p>
+          <h2>Reviews &amp; features</h2>
+        </div>
+        <div class="press" data-press></div>
+      </div>
+    </section>
+
     <!-- ABOUT -->
-    <section class="section" id="about">
+    <section class="section section--alt" id="about">
       <div class="wrap about">
         <div class="about__photo reveal" data-photo></div>
         <div class="about__text reveal">
@@ -129,7 +141,7 @@
     </section>
 
     <!-- CONTACT -->
-    <section class="section section--alt" id="contact">
+    <section class="section" id="contact">
       <div class="wrap contact">
         <div class="contact__info reveal">
           <p class="eyebrow">Contact</p>
@@ -165,7 +177,7 @@
 
   <footer class="footer">
     <div class="wrap footer__inner">
-      <p>© <span data-year></span> <span data-bind="name"></span>. All rights reserved.</p>
+      <p>© <span data-year></span> <span data-bind="name"></span>. All rights reserved. · <a href="admin.html" class="footer__edit">Edit site</a></p>
       <ul class="footer__social" data-social></ul>
     </div>
   </footer>

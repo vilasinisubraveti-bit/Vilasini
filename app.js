@@ -229,6 +229,33 @@
       ${(a.body || []).map((p) => `<p>${esc(p)}</p>`).join("")}<p class="muted">— ${esc(A.name)}</p></article>`);
   });
 
+  /* ---------- press & reviews ----------
+     press.json is built by a GitHub Action from the links in content.js (headline + picture found automatically). */
+  const renderPress = (items) => {
+    const sec = $("[data-press-section]");
+    if (!items.length) { sec.hidden = true; return; }
+    sec.hidden = false;
+    const fmtD = (d) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "";
+    $("[data-press]").innerHTML = items.map((p) => {
+      const ph = `<div class="press-card__ph">${esc(p.source || "Press")}</div>`;
+      return `<a class="press-card reveal" href="${esc(p.url)}" target="_blank" rel="noopener">
+        <div class="press-card__img">${ph}${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</div>
+        <div class="press-card__body"><div class="press-card__meta">${esc([p.source, fmtD(p.date)].filter(Boolean).join(" · "))}</div>
+          <h3 class="press-card__title">${esc(p.title || p.url)}</h3>${p.quote ? `<p class="press-card__quote">“${esc(p.quote)}”</p>` : ""}
+          <span class="press-card__go">Read article ↗</span></div></a>`;
+    }).join("");
+    observe();
+  };
+  const manualPress = (S.press || []).map((p) => (typeof p === "string" ? { url: p } : p)).filter((p) => p.url);
+  renderPress(manualPress.filter((p) => p.title));
+  fetch("press.json", { cache: "no-cache" }).then((r) => r.ok ? r.json() : []).then((auto) => {
+    if (!Array.isArray(auto)) return;
+    const byUrl = new Map(auto.map((p) => [p.url, p]));
+    manualPress.forEach((p) => byUrl.set(p.url, { ...(byUrl.get(p.url) || {}), ...Object.fromEntries(Object.entries(p).filter(([, v]) => v)) }));
+    const hidden = new Set(S.pressHidden || []);
+    renderPress([...byUrl.values()].filter((p) => !hidden.has(p.url)).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
+  }).catch(() => {});
+
   /* ---------- about ---------- */
   const ph = $("[data-photo]");
   const initial = (A.name || "♪").trim()[0];

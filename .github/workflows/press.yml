@@ -1,0 +1,35 @@
+name: Update press & reviews
+
+on:
+  push:
+    paths: ["content.js", "press-seed.json", "scripts/fetch-press.mjs"]
+  schedule:
+    - cron: "45 1 * * 1"     # weekly refresh of pictures/headlines
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/fetch-press.mjs
+      - name: Save changes
+        run: |
+          git config user.name "press-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add press.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update press & reviews"
+            git pull --rebase
+            git push
+          fi
