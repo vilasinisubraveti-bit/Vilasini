@@ -34,7 +34,7 @@ window.SITE = {
     "instagram": "https://www.instagram.com/yourhandle",
     "spotify": "",
     "facebook": "",
-    "whatsapp": "+918825878188",
+    "whatsapp": "919876543210",
     "email": "vilasinisubraveti@gmail.com"
   },
   "youtubeChannelId": "@Vilzbuzz",
