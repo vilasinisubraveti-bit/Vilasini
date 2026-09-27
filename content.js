@@ -1,6 +1,7 @@
 /* =====================================================================
    CONTENT.JS — all website text lives here.
-   Easiest way to edit: open  https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
+   Easiest way to edit: open the website on your signed-in device and tap "Edit page",
+   or use https://vilasinisubraveti-bit.github.io/Vilasini/admin.html
    ===================================================================== */
 
 window.SITE = {
