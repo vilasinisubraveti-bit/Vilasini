@@ -88,66 +88,85 @@
     openModal(`<div class="modal__video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(v.id)}?autoplay=1&rel=0" title="${esc(v.title)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`);
   });
 
-  /* ---------- events ---------- */
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const evs = (S.announcements || []).map((e) => ({ ...e, d: new Date(e.date + "T" + (e.time || "00:00")) }));
-  const upcoming = evs.filter((e) => e.d >= today).sort((a, b) => a.d - b.d);
-  const past = evs.filter((e) => e.d < today).sort((a, b) => b.d - a.d);
+  /* ---------- events ----------
+     Sources: announcements in content.js + events.json (synced from her Google Calendar).
+     Dates/times are Indian Standard Time. */
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  let evs = [], upcoming = [], past = [], activeTab = "upcoming", cdTimer;
+  const buildEvents = (list) => {
+    const now = new Date();
+    evs = list.filter((e) => e && e.date).map((e) => {
+      const [y, m, d] = e.date.split("-").map(Number);
+      const start = new Date(`${e.date}T${e.time || "00:00"}:00+05:30`);
+      const endOfDay = new Date(`${e.date}T23:59:59+05:30`);
+      return { ...e, y, m, day: d, d: start, isPast: endOfDay < now };
+    });
+    upcoming = evs.filter((e) => !e.isPast).sort((a, b) => a.d - b.d);
+    past = evs.filter((e) => e.isPast).sort((a, b) => b.d - a.d);
+  };
   const eventHTML = (e, isPast) => {
     const idx = evs.indexOf(e);
     const where = [e.venue, e.city].filter(Boolean).join(", ");
-    const when = e.time ? ` · ${e.time} IST` : "";
+    const when = e.time ? `${where ? " · " : ""}${e.time} IST` : "";
     return `<article class="event ${isPast ? "event--past" : ""} reveal">
-      <div class="event__date"><div class="event__day">${e.d.getDate()}</div><div class="event__mon">${MON[e.d.getMonth()]} ${e.d.getFullYear()}</div></div>
-      <div><span class="event__type">${esc(e.type)}</span><h3>${esc(e.title)}</h3>
+      <div class="event__date"><div class="event__day">${e.day}</div><div class="event__mon">${MON[e.m - 1]} ${e.y}</div></div>
+      <div><span class="event__type">${esc(e.type || "Concert")}</span><h3>${esc(e.title)}</h3>
         <div class="event__where">${esc(where)}${when}</div>${e.note ? `<p class="muted" style="margin:6px 0 0">${esc(e.note)}</p>` : ""}</div>
       <div class="event__actions">${!isPast ? `<button class="btn btn--ghost btn--small" data-ics="${idx}">+ Calendar</button>` : ""}
         ${!isPast && e.link ? `<a class="btn btn--small" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.linkLabel || "Details")}</a>` : ""}</div>
     </article>`;
   };
-  const renderEvents = (which) => {
-    const list = which === "past" ? past : upcoming;
-    $("[data-events]").innerHTML = list.length ? list.map((e) => eventHTML(e, which === "past")).join("")
-      : `<p class="empty">${which === "past" ? "No past events yet." : "New dates announced soon — follow on YouTube and Instagram."}</p>`;
+  const renderEvents = () => {
+    const list = activeTab === "past" ? past : upcoming;
+    $("[data-events]").innerHTML = list.length ? list.map((e) => eventHTML(e, activeTab === "past")).join("")
+      : `<p class="empty">${activeTab === "past" ? "No past events yet." : "New dates announced soon — follow on YouTube and Instagram."}</p>`;
     observe();
   };
   $$("[data-events-tab]").forEach((t) => t.addEventListener("click", () => {
     $$("[data-events-tab]").forEach((x) => x.classList.toggle("is-active", x === t));
-    renderEvents(t.dataset.eventsTab);
+    activeTab = t.dataset.eventsTab; renderEvents();
   }));
-  renderEvents("upcoming");
+
+  // Next-up banner with countdown
+  const renderNextUp = () => {
+    const box = $("[data-nextup]"); clearInterval(cdTimer);
+    const next = upcoming.find((e) => e.type !== "New venture") || upcoming[0];
+    if (!next) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = `<div class="wrap"><div><div class="nextup__label">Next up · ${esc(next.type || "Concert")}</div>
+      <div class="nextup__title">${esc(next.title)}</div></div><div class="countdown" data-cd></div>
+      <a href="#events" class="btn btn--small">Details</a></div>`;
+    const tick = () => {
+      const ms = Math.max(0, next.d - new Date());
+      const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
+      $("[data-cd]").innerHTML = `<div><b>${d}</b><span>days</span></div><div><b>${h}</b><span>hrs</span></div><div><b>${m}</b><span>min</span></div>`;
+    };
+    tick(); cdTimer = setInterval(tick, 30000);
+  };
+  const showEvents = (list) => { buildEvents(list); renderEvents(); renderNextUp(); };
+  const manualEvents = S.announcements || [];
+  showEvents(manualEvents);
+  fetch("events.json", { cache: "no-cache" }).then((r) => r.ok ? r.json() : []).then((cal) => {
+    if (!Array.isArray(cal) || !cal.length) return;
+    const key = (e) => `${e.date}|${String(e.title).trim().toLowerCase()}`;
+    const seen = new Set(manualEvents.map(key));
+    showEvents([...manualEvents, ...cal.filter((e) => !seen.has(key(e)))]);
+  }).catch(() => {});
 
   // Add-to-calendar (.ics)
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-ics]"); if (!b) return;
     const ev = evs[+b.dataset.ics];
-    const pad = (n) => String(n).padStart(2, "0");
-    const f = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+    const utc = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
     const end = new Date(ev.d.getTime() + 2 * 3600e3);
     const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//music-site//EN", "BEGIN:VEVENT",
-      `UID:${Date.now()}@music-site`, `DTSTART;TZID=Asia/Kolkata:${f(ev.d)}`, `DTEND;TZID=Asia/Kolkata:${f(end)}`,
+      `UID:${Date.now()}@music-site`, `DTSTAMP:${utc(new Date())}`, `DTSTART:${utc(ev.d)}`, `DTEND:${utc(end)}`,
       `SUMMARY:${A.name} — ${ev.title}`, `LOCATION:${[ev.venue, ev.city].filter(Boolean).join(", ")}`,
       `DESCRIPTION:${ev.link || ""}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
     a.download = ev.title.replace(/[^\w]+/g, "-") + ".ics"; a.click();
   });
-
-  // Next-up banner with countdown
-  const next = upcoming.find((e) => e.type !== "New venture") || upcoming[0];
-  if (next) {
-    const box = $("[data-nextup]"); box.hidden = false;
-    box.innerHTML = `<div class="wrap"><div><div class="nextup__label">Next up · ${esc(next.type)}</div>
-      <div class="nextup__title">${esc(next.title)}</div></div><div class="countdown" data-cd></div>
-      <a href="#events" class="btn btn--small" style="background:#fff">Details</a></div>`;
-    const tick = () => {
-      const ms = Math.max(0, next.d - new Date());
-      const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
-      $("[data-cd]").innerHTML = `<div><b>${d}</b><span>days</span></div><div><b>${h}</b><span>hrs</span></div><div><b>${m}</b><span>min</span></div>`;
-    };
-    tick(); setInterval(tick, 30000);
-  }
 
   /* ---------- classes (switch in content.js) ---------- */
   const C = S.classes || {};
